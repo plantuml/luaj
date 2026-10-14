@@ -58,7 +58,7 @@ import org.luaj.vm2.lib.TableLib;
  * For this to succeed, the file "main.lua" must be in the current directory or a resource.
  * See {@link org.luaj.vm2.lib.jse.JseBaseLib} for details on finding scripts using {@link ResourceFinder}.
  * <p>
- * The standard globals will contain all standard libraries plus {@code luajava}:
+ * The standard globals will contain the standard libraries:
  * <ul>
  * <li>{@link Globals}</li>
  * <li>{@link org.luaj.vm2.lib.jse.JseBaseLib}</li>
@@ -70,7 +70,6 @@ import org.luaj.vm2.lib.TableLib;
  * <li>{@link org.luaj.vm2.lib.jse.JseMathLib}</li>
  * <li>{@link org.luaj.vm2.lib.jse.JseIoLib}</li>
  * <li>{@link org.luaj.vm2.lib.jse.JseOsLib}</li>
- * <li>{@link org.luaj.vm2.lib.jse.LuajavaLib}</li>
  * </ul>
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
  * <p>
@@ -100,7 +99,6 @@ public class JsePlatform {
 		globals.load(new JseMathLib());
 		globals.load(new JseIoLib());
 		globals.load(new JseOsLib());
-		globals.load(new LuajavaLib());
 		LoadState.install(globals);
 		LuaC.install(globals);
 		return globals;
