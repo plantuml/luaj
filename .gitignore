@@ -1,21 +1,21 @@
-bin/
-target/
-build/
-lib/
-jit/
-*.ser
-*.gz
-*.jar
-*.lua
-*.out
-*.tar
-*.txt
-*.zip
-docs
-*.0
-.java-version
-.gradle/
-.build/
-.idea/
-.run/
+# Build output
+/build/
+/bin/
+/target/
+/out/
+/.gradle/
+/.build/
+
+# IDE
+/.idea/
 /.run/
+*.iml
+.java-version
+
+# Archives and class files
+*.jar
+*.class
+*.zip
+*.tar
+*.gz
+!/gradle/wrapper/gradle-wrapper.jar
