@@ -236,8 +236,6 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 		@Override
 		public Varargs invoke(Varargs args) {
 			LuaValue func = args.checkvalue(1);
-			if (globals != null && globals.debuglib != null)
-				globals.debuglib.onCall(this);
 			try {
 				return varargsOf(LuaConstant.TRUE, func.invoke(args.subargs(2)));
 			} catch (LuaError le) {
@@ -246,9 +244,6 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 			} catch (Exception e) {
 				final String m = e.getMessage();
 				return varargsOf(LuaConstant.FALSE, valueOf(m != null? m: e.toString()));
-			} finally {
-				if (globals != null && globals.debuglib != null)
-					globals.debuglib.onReturn();
 			}
 		}
 	}
@@ -414,8 +409,6 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 			final LuaValue preverror = t.errorfunc;
 			t.errorfunc = args.checkvalue(2);
 			try {
-				if (globals != null && globals.debuglib != null)
-					globals.debuglib.onCall(this);
 				try {
 					return varargsOf(LuaConstant.TRUE, args.arg1().invoke(args.subargs(3)));
 				} catch (LuaError le) {
@@ -424,9 +417,6 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 				} catch (Exception e) {
 					final String m = e.getMessage();
 					return varargsOf(LuaConstant.FALSE, valueOf(m != null? m: e.toString()));
-				} finally {
-					if (globals != null && globals.debuglib != null)
-						globals.debuglib.onReturn();
 				}
 			} finally {
 				t.errorfunc = preverror;

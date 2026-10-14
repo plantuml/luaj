@@ -1,7 +1,6 @@
 package org.luaj;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -30,10 +29,6 @@ public class ErrorsTest extends PlatformTestCase {
 
     @Test
     void testCoroutineLibArgs() { runTest("coroutinelibargs"); }
-
-    @Disabled("Too many failing tests")
-    @Test
-    void testDebugLibArgs() { runTest("debuglibargs"); }
 
     @Test
     void testIoLibArgs() { runTest("iolibargs"); }

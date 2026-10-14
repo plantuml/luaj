@@ -28,7 +28,6 @@ import org.luaj.vm2.Varargs;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.Bit32Lib;
 import org.luaj.vm2.lib.CoroutineLib;
-import org.luaj.vm2.lib.DebugLib;
 import org.luaj.vm2.lib.PackageLib;
 import org.luaj.vm2.lib.ResourceFinder;
 import org.luaj.vm2.lib.StringLib;
@@ -38,7 +37,7 @@ import org.luaj.vm2.lib.TableLib;
  * how globals tables are initialized for the JSE platform.
  * <p>
  * It is used to allocate either a set of standard globals using
- * {@link #standardGlobals()} or debug globals using {@link #debugGlobals()}
+ * {@link #standardGlobals()}
  * <p>
  * A simple example of initializing globals and using them from Java is:
  * <pre> {@code
@@ -73,8 +72,6 @@ import org.luaj.vm2.lib.TableLib;
  * </ul>
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
  * <p>
- * The debug globals are simply the standard globals plus the {@code debug} library {@link DebugLib}.
- * <p>
  * The class ensures that initialization is done in the correct order.
  * 
  * @see Globals
@@ -85,7 +82,6 @@ public class JsePlatform {
 	 * Create a standard set of globals for JSE including all the libraries.
 	 * 
 	 * @return Table of globals initialized with the standard JSE libraries
-	 * @see #debugGlobals()
 	 * @see org.luaj.vm2.lib.jse.JsePlatform
 	 */
 	public static Globals standardGlobals() {
@@ -101,19 +97,6 @@ public class JsePlatform {
 		globals.load(new JseOsLib());
 		LoadState.install(globals);
 		LuaC.install(globals);
-		return globals;
-	}
-
-	/** Create standard globals including the {@link DebugLib} library.
-	 * 
-	 * @return Table of globals initialized with the standard JSE and debug libraries
-	 * @see #standardGlobals()
-	 * @see org.luaj.vm2.lib.jse.JsePlatform
-	 * @see DebugLib
-	 */
-	public static Globals debugGlobals() {
-		Globals globals = standardGlobals();
-		globals.load(new DebugLib());
 		return globals;
 	}
 

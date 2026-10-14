@@ -51,7 +51,6 @@ public class lua {
 		"  -l name  require library 'name'\n" +
 		"  -i       enter interactive mode after executing 'script'\n" +
 		"  -v       show version information\n" +
-		"  -n      	nodebug - do not load debug library by default\n" +
 		"  -p      	print the prototype\n" +
 		"  -c enc  	use the supplied encoding 'enc' for input files\n" +
 		"  --       stop handling options\n" +
@@ -72,7 +71,6 @@ public class lua {
 		boolean interactive = (args.length == 0);
 		boolean versioninfo = false;
 		boolean processing = true;
-		boolean nodebug = false;
 		Vector libs = null;
 		try {
 			// stateful argument processing
@@ -102,9 +100,6 @@ public class lua {
 					case 'v':
 						versioninfo = true;
 						break;
-					case 'n':
-						nodebug = true;
-						break;
 					case 'p':
 						print = true;
 						break;
@@ -130,7 +125,7 @@ public class lua {
 				System.out.println(version);
 			
 			// new lua state
-			globals = nodebug? JsePlatform.standardGlobals(): JsePlatform.debugGlobals();
+			globals = JsePlatform.standardGlobals();
 			for ( int i=0, n=libs!=null? libs.size(): 0; i<n; i++ )
 				loadLibrary( (String) libs.elementAt(i) );
 			

@@ -21,7 +21,6 @@
 ******************************************************************************/
 package org.luaj.vm2;
 
-import org.luaj.vm2.lib.DebugLib;
 import org.luaj.vm2.compiler.LuaC;
 
 /**
@@ -188,16 +187,9 @@ public class LuaClosure extends LuaFunction {
 		// TODO: use linked list.
 		UpValue[] openups = p.p.length>0? new UpValue[stack.length]: null;
 		
-		// allow for debug hooks
-		if (globals != null && globals.debuglib != null)
-			globals.debuglib.onCall( this, varargs, stack );
-
 		// process instructions
 		try {
 			for (; true; ++pc) {
-				if (globals != null && globals.debuglib != null)
-					globals.debuglib.onInstruction( pc, v, top );
-				
 				// pull out instruction
 				i = code[pc];
 				a = ((i>>6) & 0xff);
@@ -518,8 +510,6 @@ public class LuaClosure extends LuaFunction {
 				for ( int u=openups.length; --u>=0; )
 					if ( openups[u] != null )
 						openups[u].close();
-			if (globals != null && globals.debuglib != null)
-				globals.debuglib.onReturn();
 		}
 	}
 
@@ -531,9 +521,7 @@ public class LuaClosure extends LuaFunction {
 		if (globals == null ) return msg;
 		final LuaThread r = globals.running;
 		if (r.errorfunc == null)
-			return globals.debuglib != null?
-					msg + "\n" + globals.debuglib.traceback(level):
-					msg;
+			return msg;
 		final LuaValue e = r.errorfunc;
 		r.errorfunc = null;
 		try {
@@ -546,23 +534,8 @@ public class LuaClosure extends LuaFunction {
 	}
 
 	private void processErrorHooks(LuaError le, Prototype p, int pc) {
-		String file = "?";
-		int line = -1;
-		{
-			DebugLib.CallFrame frame = null;
-			if (globals != null && globals.debuglib != null) {
-				frame = globals.debuglib.getCallFrame(le.level);
-				if (frame != null) {
-					String src = frame.shortsource();
-					file = src != null ? src : "?";
-					line = frame.currentline();
-				}
-			}
-			if (frame == null) {
-				file = p.source != null ? p.source.tojstring(): "?";
-				line = p.lineinfo != null && pc >= 0 && pc < p.lineinfo.length ? p.lineinfo[pc] : -1;
-			}
-		}
+		final String file = p.source != null ? p.source.tojstring(): "?";
+		final int line = p.lineinfo != null && pc >= 0 && pc < p.lineinfo.length ? p.lineinfo[pc] : -1;
 		le.fileline = file + ":" + line + ": ";
 		le.traceback = errorHook(le.getMessage(), le.level);
 	}

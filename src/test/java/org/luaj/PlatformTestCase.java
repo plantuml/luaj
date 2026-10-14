@@ -23,7 +23,7 @@ public class PlatformTestCase extends ResourcesTestCase {
         switch (platform) {
             default:
             case JSE:
-                globals = JsePlatform.debugGlobals();
+                globals = JsePlatform.standardGlobals();
                 break;
         }
     }

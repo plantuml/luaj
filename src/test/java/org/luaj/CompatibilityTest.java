@@ -31,10 +31,6 @@ public class CompatibilityTest {
         @Test
         void testCoroutineLib() { runTest("coroutinelib"); }
 
-        @Disabled("Too many failing tests")
-        @Test
-        void testDebugLib() { runTest("debuglib"); }
-
         @Test
         void testErrors() { runTest("errors"); }
 
