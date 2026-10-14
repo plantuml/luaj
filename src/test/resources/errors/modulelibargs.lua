@@ -9,11 +9,6 @@ checkallpass('require',{{'math','coroutine','package','string','table'}},true)
 checkallerrors('require',{{anumber}},'not found')
 checkallerrors('require',{{anil,aboolean,afunction,atable}},'bad argument')
 
--- package.loadlib
-banner('package.loadlib')
-checkallpass('package.loadlib',{{'foo'},{'bar'}},true)
-checkallerrors('package.loadlib',{notastring},'bad argument')
-
 -- package.seeall
 banner('package.seeall')
 checkallpass('package.seeall',{sometable})

@@ -32,7 +32,6 @@ import java.io.PrintStream;
 import java.io.Reader;
 
 import org.luaj.vm2.lib.BaseLib;
-import org.luaj.vm2.lib.IoLib;
 import org.luaj.vm2.lib.PackageLib;
 import org.luaj.vm2.lib.ResourceFinder;
 
@@ -76,9 +75,9 @@ import org.luaj.vm2.lib.ResourceFinder;
  * <h3>Java Field</h3>
  * Certain public fields are provided that contain the current values of important global state:
  * <ul>
- * <li>{@link #STDIN} Current value for standard input in the laaded {@link IoLib}, if any.
- * <li>{@link #STDOUT} Current value for standard output in the loaded {@link IoLib}, if any.
- * <li>{@link #STDERR} Current value for standard error in the loaded {@link IoLib}, if any.
+ * <li>{@link #STDIN} Current value for standard input, if any.
+ * <li>{@link #STDOUT} Current value for standard output, used by {@code print}.
+ * <li>{@link #STDERR} Current value for standard error.
  * <li>{@link #finder} Current loaded {@link ResourceFinder}, if any.
  * <li>{@link #compiler} Current loaded {@link Compiler}, if any.
  * <li>{@link #undumper} Current loaded {@link Undumper}, if any.

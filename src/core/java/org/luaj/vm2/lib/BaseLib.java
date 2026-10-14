@@ -34,13 +34,10 @@ import org.luaj.vm2.LuaConstant;
  * <p>
  * This contains all library functions listed as "basic functions" in the lua
  * documentation for JME. The functions dofile and loadfile use the
- * {@link Globals#finder} instance to find resource files. Since JME has no file
- * system by default, {@link BaseLib} implements {@link ResourceFinder} using
- * {@link Class#getResource(String)}, which is the closest equivalent on JME.
- * The default loader chain in {@link PackageLib} will use these as well.
- * <p>
- * To use basic library functions that include a {@link ResourceFinder} based on
- * directory lookup, use {@link org.luaj.vm2.lib.jse.JseBaseLib} instead.
+ * {@link Globals#finder} instance to find resource files. There is no file
+ * system access: {@link BaseLib} implements {@link ResourceFinder} so that it
+ * finds nothing, and the host application installs its own finder.
+ * The default loader chain in {@link PackageLib} will use it as well.
  * <p>
  * Typically, this library is included as part of a call to either
  * {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()} or
@@ -61,7 +58,7 @@ import org.luaj.vm2.LuaConstant;
  * {
  * 	&#64;code
  * 	Globals globals = new Globals();
- * 	globals.load(new JseBaseLib());
+ * 	globals.load(new BaseLib());
  * 	globals.get("print").call(LuaValue.valueOf("hello, world"));
  * }
  * </pre>
@@ -71,7 +68,6 @@ import org.luaj.vm2.LuaConstant;
  * <p>
  * This is a direct port of the corresponding library in C.
  *
- * @see org.luaj.vm2.lib.jse.JseBaseLib
  * @see ResourceFinder
  * @see Globals#finder
  * @see LibFunction
@@ -129,11 +125,12 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 	/**
 	 * ResourceFinder implementation
 	 *
-	 * Tries to open the file as a resource, which can work for JSE and JME.
+	 * There is no file system access: scripts are found by whatever
+	 * {@link Globals#finder} the host installs, and by default none is found.
 	 */
 	@Override
 	public InputStream findResource(String filename) {
-		return getClass().getResourceAsStream(filename.startsWith("/")? filename: "/" + filename);
+		return null;
 	}
 
 	// "assert", // ( v [,message] ) -> v, message | ERR

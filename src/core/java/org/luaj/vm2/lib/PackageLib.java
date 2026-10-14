@@ -22,7 +22,6 @@
 package org.luaj.vm2.lib;
 
 import java.io.InputStream;
-import java.nio.file.FileSystems;
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.Globals;
@@ -67,7 +66,7 @@ import org.luaj.vm2.LuaConstant;
  * {
  * 	&#64;code
  * 	Globals globals = new Globals();
- * 	globals.load(new JseBaseLib());
+ * 	globals.load(new BaseLib());
  * 	globals.load(new PackageLib());
  * 	System.out.println(globals.get("require").call("foo"));
  * }
@@ -75,41 +74,23 @@ import org.luaj.vm2.LuaConstant;
  *
  * <h3>Limitations</h3> This library has been implemented to match as closely as
  * possible the behavior in the corresponding library in C. However, the default
- * filesystem search semantics are different and delegated to the bas library as
- * outlined in the {@link BaseLib} and {@link org.luaj.vm2.lib.jse.JseBaseLib}
- * documentation.
+ * filesystem search semantics are different and delegated to the base library as
+ * outlined in the {@link BaseLib} documentation: modules are found through
+ * {@link Globals#finder}, and Java classes cannot be loaded as modules.
  * <p>
  *
  * @see LibFunction
  * @see BaseLib
- * @see org.luaj.vm2.lib.jse.JseBaseLib
  * @see org.luaj.vm2.lib.jse.JsePlatform
  * @see <a href="http://www.lua.org/manual/5.2/manual.html#6.3">Lua 5.2 Package
  *      Lib Reference</a>
  */
 public class PackageLib extends TwoArgFunction {
 
-	/**
-	 * The default value to use for package.path. This can be set with the
-	 * system property <code>"luaj.package.path"</code>, and is
-	 * <code>"?.lua"</code> by default.
-	 */
-	public static final String DEFAULT_LUA_PATH;
-	static {
-		String path = null;
-		try {
-			path = System.getProperty("luaj.package.path");
-		} catch (Exception e) {
-			System.out.println(e.toString());
-		}
-		if (path == null) {
-			path = "?.lua";
-		}
-		DEFAULT_LUA_PATH = path;
-	}
+	/** The default value to use for package.path, {@code "?.lua"}. */
+	public static final String DEFAULT_LUA_PATH = "?.lua";
 
 	static final LuaString _LOADED     = valueOf("loaded");
-	private static final LuaString _LOADLIB    = valueOf("loadlib");
 	static final LuaString         _PRELOAD    = valueOf("preload");
 	static final LuaString _PATH       = valueOf("path");
 	static final LuaString         _SEARCHPATH = valueOf("searchpath");
@@ -131,15 +112,9 @@ public class PackageLib extends TwoArgFunction {
 	 */
 	public lua_searcher lua_searcher;
 
-	/**
-	 * Loader that loads as a Java class. Class must have public constructor and
-	 * be a LuaValue.
-	 */
-	public java_searcher java_searcher;
-
 	private static final LuaString _SENTINEL = valueOf("\u0001");
 
-	private static final String FILE_SEP = FileSystems.getDefault().getSeparator();
+	private static final String FILE_SEP = "/";
 
 	public PackageLib() {}
 
@@ -161,13 +136,11 @@ public class PackageLib extends TwoArgFunction {
 		package_.set(_LOADED, new LuaTable());
 		package_.set(_PRELOAD, new LuaTable());
 		package_.set(_PATH, LuaValue.valueOf(DEFAULT_LUA_PATH));
-		package_.set(_LOADLIB, new loadlib());
 		package_.set(_SEARCHPATH, new searchpath());
 		package_.set(_SEEALL, new seeall());
 		LuaTable searchers = new LuaTable();
 		searchers.set(1, preload_searcher = new preload_searcher());
 		searchers.set(2, lua_searcher = new lua_searcher());
-		searchers.set(3, java_searcher = new java_searcher());
 		package_.set(_SEARCHERS, searchers);
 		package_.set("config", FILE_SEP + "\n;\n?\n!\n-\n");
 		package_.get(_LOADED).set("package", package_);
@@ -269,14 +242,6 @@ public class PackageLib extends TwoArgFunction {
 		}
 	}
 
-	public static class loadlib extends VarArgFunction {
-		@Override
-		public Varargs invoke(Varargs args) {
-			args.arg(1).checkstring();
-			return varargsOf(LuaConstant.NIL, valueOf("dynamic libraries not enabled"), valueOf("absent"));
-		}
-	}
-
 	public class preload_searcher extends VarArgFunction {
 		@Override
 		public Varargs invoke(Varargs args) {
@@ -369,60 +334,6 @@ public class PackageLib extends TwoArgFunction {
 			mt.set(LuaConstant.MetaTag.INDEX, globals);
 			arg.checktable().setmetatable(mt);
 			return LuaConstant.NONE;
-		}
-	}
-
-	public class java_searcher extends VarArgFunction {
-		@Override
-		public Varargs invoke(Varargs args) {
-			String name = args.arg(1).checkjstring();
-			String classname = toClassname(name);
-			Class c = null;
-			LuaValue v = null;
-			try {
-				c = Class.forName(classname);
-				v = (LuaValue) c.newInstance();
-				if (v.isfunction())
-					((LuaFunction) v).initupvalue1(globals);
-				return varargsOf(v, globals);
-			} catch (ClassNotFoundException cnfe) {
-				return valueOf("\n\tno class '" + classname + "'");
-			} catch (Exception e) {
-				return valueOf("\n\tjava load failed on '" + classname + "', " + e);
-			}
-		}
-	}
-
-	/** Convert lua filename to valid class name */
-	public static String toClassname(String filename) {
-		int n = filename.length();
-		int j = n;
-		if (filename.endsWith(".lua"))
-			j -= 4;
-		for (int k = 0; k < j; k++) {
-			char c = filename.charAt(k);
-			if (!isClassnamePart(c) || c == '/' || c == '\\') {
-				StringBuffer sb = new StringBuffer(j);
-				for (int i = 0; i < j; i++) {
-					c = filename.charAt(i);
-					sb.append(isClassnamePart(c)? c: c == '/' || c == '\\'? '.': '_');
-				}
-				return sb.toString();
-			}
-		}
-		return n == j? filename: filename.substring(0, j);
-	}
-
-	private static boolean isClassnamePart(char c) {
-		if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9')
-			return true;
-		switch (c) {
-			case '.':
-			case '$':
-			case '_':
-				return true;
-			default:
-				return false;
 		}
 	}
 }

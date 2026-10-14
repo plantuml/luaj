@@ -55,7 +55,7 @@ import org.luaj.vm2.LuaConstant;
  * {
  * 	&#64;code
  * 	Globals globals = new Globals();
- * 	globals.load(new JseBaseLib());
+ * 	globals.load(new BaseLib());
  * 	globals.load(new PackageLib());
  * 	globals.load(new JseStringLib());
  * 	System.out.println(globals.get("string").get("upper").call(LuaValue.valueOf("abcde")));

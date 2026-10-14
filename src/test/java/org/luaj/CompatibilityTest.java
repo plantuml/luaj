@@ -34,9 +34,6 @@ public class CompatibilityTest {
         void testFunctions() { runTest("functions"); }
 
         @Test
-        void testIoLib() { runTest("iolib"); }
-
-        @Test
         void testManyUpvals() { runTest("manyupvals"); }
 
         @Test
@@ -44,9 +41,6 @@ public class CompatibilityTest {
 
         @Test
         void testMetatags() { runTest("metatags"); }
-
-        @Test
-        void testOsLib() { runTest("oslib"); }
 
         @Test
         void testStringLib() { runTest("stringlib"); }

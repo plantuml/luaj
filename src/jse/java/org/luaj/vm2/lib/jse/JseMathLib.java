@@ -46,7 +46,7 @@ import org.luaj.vm2.lib.TwoArgFunction;
  * directly via {@link Globals#load(LuaValue)} using code such as:
  * <pre> {@code
  * Globals globals = new Globals();
- * globals.load(new JseBaseLib());
+ * globals.load(new BaseLib());
  * globals.load(new PackageLib());
  * globals.load(new JseMathLib());
  * System.out.println( globals.get("math").get("sqrt").call( LuaValue.valueOf(2) ) );

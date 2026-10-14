@@ -40,7 +40,7 @@ import org.luaj.vm2.LuaConstant;
  * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
  * <pre> {@code
  * Globals globals = new Globals();
- * globals.load(new JseBaseLib());
+ * globals.load(new BaseLib());
  * globals.load(new PackageLib());
  * globals.load(new Bit32Lib());
  * System.out.println( globals.get("bit32").get("bnot").call( LuaValue.valueOf(2) ) );

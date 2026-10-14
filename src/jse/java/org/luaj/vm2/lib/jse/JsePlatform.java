@@ -26,6 +26,7 @@ import org.luaj.vm2.LoadState;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
 import org.luaj.vm2.compiler.LuaC;
+import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.Bit32Lib;
 import org.luaj.vm2.lib.PackageLib;
 import org.luaj.vm2.lib.ResourceFinder;
@@ -53,20 +54,18 @@ import org.luaj.vm2.lib.TableLib;
  * <pre> {@code
  * globals.get("require").call(LuaValue.valueOf("main"));
  * } </pre>
- * For this to succeed, the file "main.lua" must be in the current directory or a resource.
- * See {@link org.luaj.vm2.lib.jse.JseBaseLib} for details on finding scripts using {@link ResourceFinder}.
+ * For this to succeed, set {@link Globals#finder} to a {@link ResourceFinder} that can
+ * find "main.lua"; there is no file system access by default.
  * <p>
  * The standard globals will contain the standard libraries:
  * <ul>
  * <li>{@link Globals}</li>
- * <li>{@link org.luaj.vm2.lib.jse.JseBaseLib}</li>
+ * <li>{@link BaseLib}</li>
  * <li>{@link PackageLib}</li>
  * <li>{@link Bit32Lib}</li>
  * <li>{@link TableLib}</li>
  * <li>{@link StringLib}</li>
  * <li>{@link org.luaj.vm2.lib.jse.JseMathLib}</li>
- * <li>{@link org.luaj.vm2.lib.jse.JseIoLib}</li>
- * <li>{@link org.luaj.vm2.lib.jse.JseOsLib}</li>
  * </ul>
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
  * <p>
@@ -84,14 +83,12 @@ public class JsePlatform {
 	 */
 	public static Globals standardGlobals() {
 		Globals globals = new Globals();
-		globals.load(new JseBaseLib());
+		globals.load(new BaseLib());
 		globals.load(new PackageLib());
 		globals.load(new Bit32Lib());
 		globals.load(new TableLib());
 		globals.load(new JseStringLib());
 		globals.load(new JseMathLib());
-		globals.load(new JseIoLib());
-		globals.load(new JseOsLib());
 		LoadState.install(globals);
 		LuaC.install(globals);
 		return globals;

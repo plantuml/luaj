@@ -4,8 +4,7 @@
 fail 	require('coroutine')	'module 'coroutine' not found: coroutine
 	no field package.preload['coroutine']
 	coroutine.lua
-	test/lua/errors/coroutine.lua
-	no class 'coroutine''
+	test/lua/errors/coroutine.lua'
 -		require('package')	table
 -		require('string')	table
 -		require('table')	table
@@ -16,14 +15,6 @@ fail 	require('coroutine')	'module 'coroutine' not found: coroutine
 -		require(true)	...bad argument...
 -		require(<function>)	...bad argument...
 -		require(<table>)	...bad argument...
-====== package.loadlib ======
---- checkallpass
--		package.loadlib('foo','bar')	nil,string,string
---- checkallerrors
--		package.loadlib(nil)	...bad argument...
--		package.loadlib(true)	...bad argument...
--		package.loadlib(<table>)	...bad argument...
--		package.loadlib(<function>)	...bad argument...
 ====== package.seeall ======
 --- checkallpass
 -		package.seeall(<table>)	

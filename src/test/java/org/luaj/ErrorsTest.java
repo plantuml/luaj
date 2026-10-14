@@ -28,9 +28,6 @@ public class ErrorsTest extends PlatformTestCase {
     }
 
     @Test
-    void testIoLibArgs() { runTest("iolibargs"); }
-
-    @Test
     void testMathLibArgs() { runTest("mathlibargs"); }
 
     @Test

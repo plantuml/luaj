@@ -4,7 +4,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
-import org.luaj.vm2.lib.jse.JseProcess;
 
 import java.io.*;
 import java.nio.file.Files;
