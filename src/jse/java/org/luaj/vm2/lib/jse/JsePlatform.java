@@ -28,6 +28,7 @@ import org.luaj.vm2.Varargs;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.Bit32Lib;
+import org.luaj.vm2.lib.MathLib;
 import org.luaj.vm2.lib.PackageLib;
 import org.luaj.vm2.lib.ResourceFinder;
 import org.luaj.vm2.lib.StringLib;
@@ -65,7 +66,7 @@ import org.luaj.vm2.lib.TableLib;
  * <li>{@link Bit32Lib}</li>
  * <li>{@link TableLib}</li>
  * <li>{@link StringLib}</li>
- * <li>{@link org.luaj.vm2.lib.jse.JseMathLib}</li>
+ * <li>{@link MathLib}</li>
  * </ul>
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
  * <p>
@@ -87,8 +88,8 @@ public class JsePlatform {
 		globals.load(new PackageLib());
 		globals.load(new Bit32Lib());
 		globals.load(new TableLib());
-		globals.load(new JseStringLib());
-		globals.load(new JseMathLib());
+		globals.load(new StringLib());
+		globals.load(new MathLib());
 		LoadState.install(globals);
 		LuaC.install(globals);
 		return globals;

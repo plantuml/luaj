@@ -23,6 +23,9 @@ package org.luaj.vm2.lib;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
 import org.luaj.vm2.Buffer;
 import org.luaj.vm2.compiler.DumpState;
@@ -57,7 +60,7 @@ import org.luaj.vm2.LuaConstant;
  * 	Globals globals = new Globals();
  * 	globals.load(new BaseLib());
  * 	globals.load(new PackageLib());
- * 	globals.load(new JseStringLib());
+ * 	globals.load(new StringLib());
  * 	System.out.println(globals.get("string").get("upper").call(LuaValue.valueOf("abcde")));
  * }
  * </pre>
@@ -508,8 +511,113 @@ public class StringLib extends TwoArgFunction {
                 pad(buf, ' ', nspaces);
         }
 
+        /** Formats a double for the conversions e, E, f, g and G, like the C printf. */
         public void format(Buffer buf, double x) {
-            buf.append(StringLib.this.format(src, x));
+            final boolean upper = conversion == 'E' || conversion == 'G';
+            final boolean neg = x < 0 || (x == 0 && 1/x < 0);
+            final double a = Math.abs(x);
+            String body;
+            boolean finite = !(Double.isNaN(x) || Double.isInfinite(x));
+            if (!finite) {
+                body = Double.isNaN(x)? "nan": "inf";
+                if (upper)
+                    body = body.toUpperCase();
+            } else {
+                int prec = precision < 0? 6: precision;
+                switch (conversion) {
+                    case 'f':
+                        body = fixed(a, prec);
+                        break;
+                    case 'e':
+                    case 'E':
+                        body = exponent(a, prec);
+                        break;
+                    default:
+                        body = general(a, prec);
+                        break;
+                }
+                if (upper)
+                    body = body.toUpperCase();
+            }
+            String sign = neg? "-": explicitPlus? "+": space? " ": "";
+            int fill = width-sign.length()-body.length();
+            if (fill < 0)
+                fill = 0;
+            if (leftAdjust) {
+                buf.append(sign);
+                buf.append(body);
+                pad(buf, ' ', fill);
+            } else if (zeroPad && finite) {
+                buf.append(sign);
+                pad(buf, '0', fill);
+                buf.append(body);
+            } else {
+                pad(buf, ' ', fill);
+                buf.append(sign);
+                buf.append(body);
+            }
+        }
+
+        private String fixed(double a, int prec) {
+            String s = new BigDecimal(a).setScale(prec, RoundingMode.HALF_EVEN).toPlainString();
+            return alternateForm && prec == 0? s+".": s;
+        }
+
+        /** decimal digits (prec+1 of them) and decimal exponent of a, correctly rounded */
+        private String digits(double a, int prec, int[] exp) {
+            StringBuilder sb = new StringBuilder();
+            if (a == 0) {
+                exp[0] = 0;
+            } else {
+                BigDecimal bd = new BigDecimal(a).round(new MathContext(prec+1, RoundingMode.HALF_EVEN));
+                sb.append(bd.unscaledValue().toString());
+                exp[0] = bd.precision()-bd.scale()-1;
+            }
+            while (sb.length() < prec+1)
+                sb.append('0');
+            return sb.toString();
+        }
+
+        private String exponent(double a, int prec) {
+            int[] e = new int[1];
+            String d = digits(a, prec, e);
+            StringBuilder sb = new StringBuilder();
+            sb.append(d.charAt(0));
+            if (prec > 0 || alternateForm)
+                sb.append('.');
+            sb.append(d, 1, d.length());
+            sb.append('e').append(e[0] < 0? '-': '+');
+            int ae = Math.abs(e[0]);
+            if (ae < 10)
+                sb.append('0');
+            sb.append(ae);
+            return sb.toString();
+        }
+
+        private String general(double a, int prec) {
+            int p = prec == 0? 1: prec;
+            int[] e = new int[1];
+            digits(a, p-1, e);
+            String s;
+            if (e[0] >= -4 && e[0] < p)
+                s = new BigDecimal(a).setScale(Math.max(p-1-e[0], 0), RoundingMode.HALF_EVEN).toPlainString();
+            else
+                s = exponent(a, p-1);
+            if (alternateForm)
+                return s.indexOf('.') < 0? s+".": s;
+            // strip trailing zeros of the mantissa
+            int ei = s.indexOf('e');
+            String mant = ei < 0? s: s.substring(0, ei);
+            String tail = ei < 0? "": s.substring(ei);
+            if (mant.indexOf('.') >= 0) {
+                int end = mant.length();
+                while (mant.charAt(end-1) == '0')
+                    end--;
+                if (mant.charAt(end-1) == '.')
+                    end--;
+                mant = mant.substring(0, end);
+            }
+            return mant+tail;
         }
 
         public void format(Buffer buf, LuaString s) {
@@ -524,10 +632,6 @@ public class StringLib extends TwoArgFunction {
             while ( n-- > 0 )
                 buf.append(b);
         }
-    }
-
-    protected String format(String src, double x) {
-        return String.valueOf(x);
     }
 
     /**

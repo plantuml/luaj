@@ -33,36 +33,8 @@ import org.luaj.vm2.LuaConstant;
  * Subclass of {@link LibFunction} which implements the lua standard {@code math}
  * library.
  * <p>
- * It contains only the math library support that is possible on JME.
- * For a more complete implementation based on math functions specific to JSE
- * use {@link org.luaj.vm2.lib.jse.JseMathLib}.
- * In Particular the following math functions are <b>not</b> implemented by this library:
- * <ul>
- * <li>acos</li>
- * <li>asin</li>
- * <li>atan</li>
- * <li>cosh</li>
- * <li>log</li>
- * <li>sinh</li>
- * <li>tanh</li>
- * <li>atan2</li>
- * </ul>
- * <p>
- * The implementations of {@code exp()} and {@code pow()} are constructed by
- * hand for JME, so will be slower and less accurate than when executed on the JSE platform.
- * <p>
- * Typically, this library is included as part of a call to either
- * {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()} or
- * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
- * System.out.println( globals.get("math").get("sqrt").call( LuaValue.valueOf(2) ) );
- * } </pre>
- * When using {@link org.luaj.vm2.lib.jse.JsePlatform} as in this example,
- * the subclass {@link org.luaj.vm2.lib.jse.JseMathLib} will
- * be included, which also includes this base functionality.
- * <p>
- * To instantiate and use it directly,
- * link it into your globals table via {@link LuaValue#load(LuaValue)} using code such as:
+ * Typically, this library is included as part of a call to
+ * {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()}, or loaded directly:
  * <pre> {@code
  * Globals globals = new Globals();
  * globals.load(new BaseLib());
@@ -70,27 +42,15 @@ import org.luaj.vm2.LuaConstant;
  * globals.load(new MathLib());
  * System.out.println( globals.get("math").get("sqrt").call( LuaValue.valueOf(2) ) );
  * } </pre>
- * Doing so will ensure the library is properly initialized
- * and loaded into the globals table.
- * <p>
- * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  * @see LibFunction
- * @see org.luaj.vm2.lib.jse.JsePlatform
- * @see org.luaj.vm2.lib.jse.JseMathLib
  * @see <a href="http://www.lua.org/manual/5.2/manual.html#6.6">Lua 5.2 Math Lib Reference</a>
  */
 public class MathLib extends TwoArgFunction {
-
-	/** Pointer to the latest MathLib instance, used only to dispatch
-	 * math.exp to tha correct platform math library.
-	 */
-	public static MathLib MATHLIB = null;
 
 	/** Construct a MathLib, which can be initialized by calling it with a
 	 * modname string, and a global environment table as arguments using
 	 * {@link #call(LuaValue, LuaValue)}. */
 	public MathLib() {
-		MATHLIB = this;
 	}
 
 	/** Perform one-time initialization on the library by creating a table
@@ -105,7 +65,7 @@ public class MathLib extends TwoArgFunction {
 		math.set("ceil", new ceil());
 		math.set("cos", new cos());
 		math.set("deg", new deg());
-		math.set("exp", new exp(this));
+		math.set("exp", new exp());
 		math.set("floor", new floor());
 		math.set("fmod", new fmod());
 		math.set("frexp", new frexp());
@@ -116,6 +76,14 @@ public class MathLib extends TwoArgFunction {
 		math.set("modf", new modf());
 		math.set("pi", Math.PI );
 		math.set("pow", new pow());
+		math.set("acos", new acos());
+		math.set("asin", new asin());
+		math.set("atan", new atan());
+		math.set("atan2", new atan2());
+		math.set("cosh", new cosh());
+		math.set("log", new log());
+		math.set("sinh", new sinh());
+		math.set("tanh", new tanh());
 		random r;
 		math.set("random", r = new random());
 		math.set("randomseed", new randomseed(r));
@@ -192,12 +160,57 @@ public class MathLib extends TwoArgFunction {
 	}
 
 	static final class exp extends UnaryOp {
-		final MathLib mathlib;
-		exp(MathLib mathlib) {
-			this.mathlib = mathlib;
+		@Override
+		protected double call(double d) { return Math.exp(d); }
+	}
+
+	static final class acos extends UnaryOp {
+		@Override
+		protected double call(double d) { return Math.acos(d); }
+	}
+
+	static final class asin extends UnaryOp {
+		@Override
+		protected double call(double d) { return Math.asin(d); }
+	}
+
+	static final class cosh extends UnaryOp {
+		@Override
+		protected double call(double d) { return Math.cosh(d); }
+	}
+
+	static final class sinh extends UnaryOp {
+		@Override
+		protected double call(double d) { return Math.sinh(d); }
+	}
+
+	static final class tanh extends UnaryOp {
+		@Override
+		protected double call(double d) { return Math.tanh(d); }
+	}
+
+	static final class atan extends TwoArgFunction {
+		@Override
+		public LuaValue call(LuaValue x, LuaValue y) {
+			return valueOf(Math.atan2(x.checkdouble(), y.optdouble(1)));
 		}
-		protected double call(double d) {
-			return mathlib.dpow_lib(Math.E,d);
+	}
+
+	static final class atan2 extends TwoArgFunction {
+		@Override
+		public LuaValue call(LuaValue x, LuaValue y) {
+			return valueOf(Math.atan2(x.checkdouble(), y.checkdouble()));
+		}
+	}
+
+	static final class log extends TwoArgFunction {
+		@Override
+		public LuaValue call(LuaValue x, LuaValue base) {
+			double nat = Math.log(x.checkdouble());
+			double b = base.optdouble(Math.E);
+			if (b != Math.E)
+				nat /= Math.log(b);
+			return valueOf(nat);
 		}
 	}
 
@@ -224,7 +237,7 @@ public class MathLib extends TwoArgFunction {
 	static final class pow extends BinaryOp {
 		@Override
 		protected double call(double x, double y) {
-			return MathLib.dpow_default(x, y);
+			return Math.pow(x, y);
 		}
 	}
 
@@ -325,45 +338,13 @@ public class MathLib extends TwoArgFunction {
 		}
 	}
 
-	/**
-	 * compute power using installed math library, or default if there is no
-	 * math library installed
-	 */
+	/** compute power, used by the arithmetic operator ^ */
 	public static LuaValue dpow(double a, double b) {
-		return LuaDouble.valueOf(MATHLIB != null? MATHLIB.dpow_lib(a, b): dpow_default(a, b));
+		return LuaDouble.valueOf(Math.pow(a, b));
 	}
 
 	public static double dpow_d(double a, double b) {
-		return MATHLIB != null? MATHLIB.dpow_lib(a, b): dpow_default(a, b);
-	}
-
-	/**
-	 * Hook to override default dpow behavior with faster implementation.
-	 */
-	public double dpow_lib(double a, double b) {
-		return dpow_default(a, b);
-	}
-
-	/**
-	 * Default JME version computes using longhand heuristics.
-	 */
-	protected static double dpow_default(double a, double b) {
-		if (b < 0)
-			return 1/dpow_default(a, -b);
-		double p = 1;
-		int whole = (int) b;
-		for (double v = a; whole > 0; whole >>= 1, v *= v)
-			if ((whole & 1) != 0)
-				p *= v;
-		if ((b -= whole) > 0) {
-			int frac = (int) (0x10000*b);
-			for (; (frac & 0xffff) != 0; frac <<= 1) {
-				a = Math.sqrt(a);
-				if ((frac & 0x8000) != 0)
-					p *= a;
-			}
-		}
-		return p;
+		return Math.pow(a, b);
 	}
 
 }
