@@ -185,7 +185,7 @@ public class DumpState {
 							throw new IllegalArgumentException("number format not supported: "+NUMBER_FORMAT);
 					}
 				break;
-				case LuaType.STRING:
+				case STRING:
 					writer.write(luaType.ec);
 					dumpString((LuaString)o);
 				break;

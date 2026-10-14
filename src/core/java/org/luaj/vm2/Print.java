@@ -411,12 +411,12 @@ public class Print extends Lua {
 				ps.print(STRING_FOR_NULL);
 			else
 				switch (v.getType()) {
-					case LuaType.STRING:
+					case STRING:
 						LuaString s = v.checkstring();
 						ps.print(s.length() < 48? s.tojstring()
 							: s.substring(0, 32).tojstring() + "...+" + (s.length()-32) + "b");
 						break;
-					case LuaType.USERDATA:
+					case USERDATA:
 						Object o = v.touserdata();
 						if (o != null) {
 							String n = o.getClass().getName();
@@ -426,7 +426,7 @@ public class Print extends Lua {
 							ps.print(v);
 						}
 						break;
-					case LuaType.FUNCTION:
+					case FUNCTION:
 					default:
 						ps.print(v.tojstring());
 				}

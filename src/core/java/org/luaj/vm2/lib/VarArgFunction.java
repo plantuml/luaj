@@ -83,8 +83,8 @@ abstract public class VarArgFunction extends LibFunction {
 	}
 
 	private LuaValue extractValue(Varargs varargs) {
-		if (varargs instanceof LuaValue luaValue)
-			return luaValue;
+		if (varargs instanceof LuaValue)
+			return (LuaValue) varargs;
 
 		return varargs.arg(1);
 	}

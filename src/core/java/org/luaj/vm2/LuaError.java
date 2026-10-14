@@ -22,7 +22,6 @@
 package org.luaj.vm2;
 
 
-import java.io.Serial;
 
 /**
  * RuntimeException that is thrown and caught in response to a lua error. 
@@ -41,7 +40,6 @@ import java.io.Serial;
  * was not supplied.
  */
 public class LuaError extends RuntimeException {
-	@Serial
 	private static final long serialVersionUID = 1L;
 	
 	protected int level;

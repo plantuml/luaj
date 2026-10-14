@@ -122,9 +122,9 @@ public class LuaUserdata extends LuaValue {
     public boolean equals(Object val) {
         if (this == val)
             return true;
-        if (!(val instanceof LuaUserdata u))
+        if (!(val instanceof LuaUserdata))
             return false;
-        return m_instance.equals(u.m_instance);
+        return m_instance.equals(((LuaUserdata) val).m_instance);
     }
 
     // equality w/ metatable processing

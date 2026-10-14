@@ -218,12 +218,17 @@ abstract public class LibFunction extends LuaFunction {
 	}
 
 	public Varargs invoke(Varargs args) {
-        return switch (args.narg()) {
-            case 0 -> call();
-            case 1 -> call(args.arg1());
-            case 2 -> call(args.arg1(), args.arg(2));
-            case 3 -> call(args.arg1(), args.arg(2), args.arg(3));
-            default -> call(args.arg1(), args.arg(2), args.arg(3), args.arg(4));
-        };
+        switch (args.narg()) {
+            case 0:
+                return call();
+            case 1:
+                return call(args.arg1());
+            case 2:
+                return call(args.arg1(), args.arg(2));
+            case 3:
+                return call(args.arg1(), args.arg(2), args.arg(3));
+            default:
+                return call(args.arg1(), args.arg(2), args.arg(3), args.arg(4));
+        }
 	}
 }
