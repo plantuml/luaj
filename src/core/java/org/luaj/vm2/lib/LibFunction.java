@@ -21,6 +21,8 @@
 ******************************************************************************/
 package org.luaj.vm2.lib;
 
+import java.util.function.Supplier;
+
 import org.luaj.vm2.LuaError;
 import org.luaj.vm2.LuaFunction;
 import org.luaj.vm2.LuaValue;
@@ -149,11 +151,12 @@ abstract public class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = 0, second with 1, etc.
 	 * @param env The environment to apply to each bound function
-	 * @param factory the Class to instantiate for each bound function
+	 * @param factory creates one new instance for each bound function, typically
+	 *        a constructor reference such as {@code MyLibV::new}
 	 * @param names array of String names, one for each function.
-	 * @see #bind(LuaValue, Class, String[], int)
+	 * @see #bind(LuaValue, Supplier, String[], int)
 	 */
-	protected void bind(LuaValue env, Class factory, String[] names ) {
+	protected void bind(LuaValue env, Supplier<? extends LibFunction> factory, String[] names ) {
 		bind( env, factory, names, 0 );
 	}
 	
@@ -163,21 +166,19 @@ abstract public class LibFunction extends LuaFunction {
 	 * An array of names is provided, and the first name is bound
 	 * with opcode = {@code firstopcode}, second with {@code firstopcode+1}, etc.
 	 * @param env The environment to apply to each bound function
-	 * @param factory the Class to instantiate for each bound function
+	 * @param factory creates one new instance for each bound function, typically
+	 *        a constructor reference such as {@code MyLibV::new}. No reflection is
+	 *        involved, so this also works where {@code Class.newInstance()} does not.
 	 * @param names array of String names, one for each function.
 	 * @param firstopcode the first opcode to use
-	 * @see #bind(LuaValue, Class, String[])
+	 * @see #bind(LuaValue, Supplier, String[])
 	 */
-	protected void bind(LuaValue env, Class factory, String[] names, int firstopcode ) {
-		try {
-			for ( int i=0, n=names.length; i<n; i++ ) {
-				LibFunction f = (LibFunction) factory.newInstance();
-				f.opcode = firstopcode + i;
-				f.name = names[i];
-				env.set(f.name, f);
-			}
-		} catch ( Exception e ) {
-			throw new LuaError( "bind failed: "+e );
+	protected void bind(LuaValue env, Supplier<? extends LibFunction> factory, String[] names, int firstopcode ) {
+		for ( int i=0, n=names.length; i<n; i++ ) {
+			LibFunction f = factory.get();
+			f.opcode = firstopcode + i;
+			f.name = names[i];
+			env.set(f.name, f);
 		}
 	}
 

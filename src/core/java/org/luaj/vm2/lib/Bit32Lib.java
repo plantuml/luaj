@@ -64,10 +64,10 @@ public class Bit32Lib extends TwoArgFunction {
 	 */
 	public LuaValue call(LuaValue modname, LuaValue env) {
 		LuaTable t = new LuaTable();
-		bind(t, Bit32LibV.class, new String[] {
+		bind(t, Bit32LibV::new, new String[] {
 			"band", "bnot", "bor", "btest", "bxor", "extract", "replace"
 		});
-		bind(t, Bit32Lib2.class, new String[] {
+		bind(t, Bit32Lib2::new, new String[] {
 			"arshift", "lrotate", "lshift", "rrotate", "rshift"
 		});
 		env.set("bit32", t);
