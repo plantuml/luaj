@@ -187,8 +187,15 @@ public class LuaClosure extends LuaFunction {
 		// TODO: use linked list.
 		UpValue[] openups = p.p.length>0? new UpValue[stack.length]: null;
 		
+		// limit the nesting of calls, see Globals.maxCallDepth
+		final Globals g = globals;
+		if (g != null)
+			++g.callDepth;
+
 		// process instructions
 		try {
+			if (g != null && g.callDepth > g.maxCallDepth)
+				throw new LuaError("stack overflow");
 			for (; true; ++pc) {
 				// pull out instruction
 				i = code[pc];
@@ -505,7 +512,13 @@ public class LuaClosure extends LuaFunction {
 			LuaError le = new LuaError(e);
 			processErrorHooks(le, p, pc);
 			throw le;
+		} catch ( StackOverflowError e ) {
+			// the native stack ran out before maxCallDepth did; the enclosing
+			// Lua function adds the position, as the error has no traceback yet
+			throw new LuaError("stack overflow");
 		} finally {
+			if (g != null)
+				--g.callDepth;
 			if ( openups != null )
 				for ( int u=openups.length; --u>=0; )
 					if ( openups[u] != null )
@@ -523,11 +536,14 @@ public class LuaClosure extends LuaFunction {
 			return msg;
 		final LuaValue e = globals.errorfunc;
 		globals.errorfunc = null;
+		// leave the handler some room, even when the error is a stack overflow
+		globals.maxCallDepth += 20;
 		try {
 			return e.call( valueOf(msg) ).tojstring();
 		} catch ( Throwable t ) {
 			return "error in error handling";
 		} finally {
+			globals.maxCallDepth -= 20;
 			globals.errorfunc = e;
 		}
 	}

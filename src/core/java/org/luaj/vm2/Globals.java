@@ -123,6 +123,22 @@ public class Globals extends LuaTable {
 	/** Error message handler installed by xpcall, or null. Should not be changed by non-library code. */
 	public LuaValue errorfunc;
 
+	/** Default value of {@link #maxCallDepth}. */
+	public static final int DEFAULT_MAX_CALL_DEPTH = 200;
+
+	/**
+	 * Maximum number of nested Lua function calls. Going deeper raises the
+	 * catchable Lua error {@code "stack overflow"}, instead of exhausting the
+	 * native stack, which crashes the process on platforms where a stack
+	 * overflow cannot be caught (such as code compiled to C). Tail calls do not
+	 * nest and are not counted. The default is small enough for a 1 MB stack;
+	 * a host that runs scripts on a larger stack may raise it.
+	 */
+	public int maxCallDepth = DEFAULT_MAX_CALL_DEPTH;
+
+	/** Number of Lua functions currently executing. Should not be changed by non-library code. */
+	public int callDepth;
+
 	/** The BaseLib instance loaded into this Globals */
 	public BaseLib baselib;
 	
