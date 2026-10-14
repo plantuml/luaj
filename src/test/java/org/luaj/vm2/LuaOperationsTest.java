@@ -61,7 +61,6 @@ class LuaOperationsTest {
             return LuaConstant.NONE;
         }
     };
-    private final LuaThread thread = new LuaThread(new Globals(), somefunc);
     private final Prototype proto = new Prototype(1);
     private final LuaClosure someclosure = new LuaClosure(proto, table);
     private final LuaUserdata userdataobj = LuaValue.userdataOf(sampleobject);
@@ -108,7 +107,6 @@ class LuaOperationsTest {
         assertEquals(LuaInteger.valueOf(samplestringdouble.length()), stringdouble.len());
         assertEquals(LuaInteger.valueOf(2), table.len());
         throwsLuaError("len", somefunc);
-        throwsLuaError("len", thread);
         throwsLuaError("len", someclosure);
         throwsLuaError("len", userdataobj);
         throwsLuaError("len", userdatacls);
@@ -129,7 +127,6 @@ class LuaOperationsTest {
         assertEquals(samplestringdouble.length(), stringdouble.length());
         assertEquals(2, table.length());
         throwsLuaError("length", somefunc);
-        throwsLuaError("length", thread);
         throwsLuaError("length", someclosure);
         throwsLuaError("length", userdataobj);
         throwsLuaError("length", userdatacls);

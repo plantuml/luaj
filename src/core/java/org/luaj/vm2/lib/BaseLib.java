@@ -405,9 +405,8 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 	final class xpcall extends VarArgFunction {
 		@Override
 		public Varargs invoke(Varargs args) {
-			final LuaThread t = globals.running;
-			final LuaValue preverror = t.errorfunc;
-			t.errorfunc = args.checkvalue(2);
+			final LuaValue preverror = globals.errorfunc;
+			globals.errorfunc = args.checkvalue(2);
 			try {
 				try {
 					return varargsOf(LuaConstant.TRUE, args.arg1().invoke(args.subargs(3)));
@@ -419,7 +418,7 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 					return varargsOf(LuaConstant.FALSE, valueOf(m != null? m: e.toString()));
 				}
 			} finally {
-				t.errorfunc = preverror;
+				globals.errorfunc = preverror;
 			}
 		}
 	}

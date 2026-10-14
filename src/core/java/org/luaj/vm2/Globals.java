@@ -121,8 +121,8 @@ public class Globals extends LuaTable {
 	/** The installed ResourceFinder for looking files by name. */
 	public ResourceFinder finder;
 	
-	/** The currently running thread.  Should not be changed by non-library code. */
-	public LuaThread running = new LuaThread(this);
+	/** Error message handler installed by xpcall, or null. Should not be changed by non-library code. */
+	public LuaValue errorfunc;
 
 	/** The BaseLib instance loaded into this Globals */
 	public BaseLib baselib;
@@ -295,17 +295,6 @@ public class Globals extends LuaTable {
 		if (compiler == null)
 			error("No compiler.");
 		return compiler.compile(stream, chunkname);
-	}
-
-	/** Function which yields the current thread. 
-	 * @param args  Arguments to supply as return values in the resume function of the resuming thread.
-	 * @return Values supplied as arguments to the resume() call that reactivates this thread.
-	 */
-	public Varargs yield(Varargs args) {
-		if (running == null || running.isMainThread())
-			throw new LuaError("cannot yield main thread");
-		final LuaThread.State s = running.state;
-		return s.lua_yield(args);
 	}
 
 	/** Reader implementation to read chars from a String in JME or JSE. */

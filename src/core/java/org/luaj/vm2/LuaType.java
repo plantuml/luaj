@@ -20,8 +20,6 @@ public enum LuaType {
     FUNCTION        ("function",        6),
     /** Type enumeration for {@code userdata} */
     USERDATA        ("userdata",        7),
-    /** Type enumeration for {@code threads} */
-    THREAD          ("thread",          8),
     /**
      * Type enumeration for {@code unknown values}.<br>
      * For compatibility with C-based lua only

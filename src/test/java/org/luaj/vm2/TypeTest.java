@@ -58,7 +58,6 @@ class TypeTest {
             return LuaConstant.NONE;
         }
     };
-    private final LuaThread thread = new LuaThread(new Globals(), somefunc);
     private final LuaClosure someclosure = new LuaClosure(new Prototype(), new LuaTable());
     private final LuaUserdata userdataobj = LuaValue.userdataOf(sampleobject);
     private final LuaUserdata userdatacls = LuaValue.userdataOf(sampledata);
@@ -83,7 +82,6 @@ class TypeTest {
         assertFalse(stringint.isboolean());
         assertFalse(stringlong.isboolean());
         assertFalse(stringdouble.isboolean());
-        assertFalse(thread.isboolean());
         assertFalse(table.isboolean());
         assertFalse(userdataobj.isboolean());
         assertFalse(userdatacls.isboolean());
@@ -104,7 +102,6 @@ class TypeTest {
         assertFalse(stringint.isclosure());
         assertFalse(stringlong.isclosure());
         assertFalse(stringdouble.isclosure());
-        assertFalse(thread.isclosure());
         assertFalse(table.isclosure());
         assertFalse(userdataobj.isclosure());
         assertFalse(userdatacls.isclosure());
@@ -125,7 +122,6 @@ class TypeTest {
         assertFalse(stringint.isfunction());
         assertFalse(stringlong.isfunction());
         assertFalse(stringdouble.isfunction());
-        assertFalse(thread.isfunction());
         assertFalse(table.isfunction());
         assertFalse(userdataobj.isfunction());
         assertFalse(userdatacls.isfunction());
@@ -145,7 +141,6 @@ class TypeTest {
         assertFalse(stringstring.isint());
         assertTrue(stringint.isint());
         assertFalse(stringdouble.isint());
-        assertFalse(thread.isint());
         assertFalse(table.isint());
         assertFalse(userdataobj.isint());
         assertFalse(userdatacls.isint());
@@ -166,7 +161,6 @@ class TypeTest {
         assertFalse(stringint.isinttype());
         assertFalse(stringlong.isinttype());
         assertFalse(stringdouble.isinttype());
-        assertFalse(thread.isinttype());
         assertFalse(table.isinttype());
         assertFalse(userdataobj.isinttype());
         assertFalse(userdatacls.isinttype());
@@ -186,7 +180,6 @@ class TypeTest {
         assertTrue(stringint.islong());
         assertTrue(stringlong.islong());
         assertFalse(stringdouble.islong());
-        assertFalse(thread.islong());
         assertFalse(table.islong());
         assertFalse(userdataobj.islong());
         assertFalse(userdatacls.islong());
@@ -207,7 +200,6 @@ class TypeTest {
         assertFalse(stringint.isnil());
         assertFalse(stringlong.isnil());
         assertFalse(stringdouble.isnil());
-        assertFalse(thread.isnil());
         assertFalse(table.isnil());
         assertFalse(userdataobj.isnil());
         assertFalse(userdatacls.isnil());
@@ -228,7 +220,6 @@ class TypeTest {
         assertTrue(stringint.isnumber());
         assertTrue(stringlong.isnumber());
         assertTrue(stringdouble.isnumber());
-        assertFalse(thread.isnumber());
         assertFalse(table.isnumber());
         assertFalse(userdataobj.isnumber());
         assertFalse(userdatacls.isnumber());
@@ -248,31 +239,11 @@ class TypeTest {
         assertTrue(stringint.isstring());
         assertTrue(stringlong.isstring());
         assertTrue(stringdouble.isstring());
-        assertFalse(thread.isstring());
         assertFalse(table.isstring());
         assertFalse(userdataobj.isstring());
         assertFalse(userdatacls.isstring());
         assertFalse(somefunc.isstring());
         assertFalse(someclosure.isstring());
-    }
-
-    @Test
-    void testIsThread() {
-        assertFalse(somenil.isthread());
-        assertFalse(sometrue.isthread());
-        assertFalse(somefalse.isthread());
-        assertFalse(intint.isthread());
-        assertFalse(longdouble.isthread());
-        assertFalse(doubledouble.isthread());
-        assertFalse(stringstring.isthread());
-        assertFalse(stringint.isthread());
-        assertFalse(stringdouble.isthread());
-        assertTrue(thread.isthread());
-        assertFalse(table.isthread());
-        assertFalse(userdataobj.isthread());
-        assertFalse(userdatacls.isthread());
-        assertFalse(somefunc.isthread());
-        assertFalse(someclosure.isthread());
     }
 
     @Test
@@ -286,7 +257,6 @@ class TypeTest {
         assertFalse(stringstring.istable());
         assertFalse(stringint.istable());
         assertFalse(stringdouble.istable());
-        assertFalse(thread.istable());
         assertTrue(table.istable());
         assertFalse(userdataobj.istable());
         assertFalse(userdatacls.istable());
@@ -305,7 +275,6 @@ class TypeTest {
         assertFalse(stringstring.isuserdata());
         assertFalse(stringint.isuserdata());
         assertFalse(stringdouble.isuserdata());
-        assertFalse(thread.isuserdata());
         assertFalse(table.isuserdata());
         assertTrue(userdataobj.isuserdata());
         assertTrue(userdatacls.isuserdata());
@@ -323,7 +292,6 @@ class TypeTest {
         assertFalse(stringstring.isuserdata(Object.class));
         assertFalse(stringint.isuserdata(Object.class));
         assertFalse(stringdouble.isuserdata(Object.class));
-        assertFalse(thread.isuserdata(Object.class));
         assertFalse(table.isuserdata(Object.class));
         assertTrue(userdataobj.isuserdata(Object.class));
         assertTrue(userdatacls.isuserdata(Object.class));
@@ -341,7 +309,6 @@ class TypeTest {
         assertFalse(stringstring.isuserdata(MyData.class));
         assertFalse(stringint.isuserdata(MyData.class));
         assertFalse(stringdouble.isuserdata(MyData.class));
-        assertFalse(thread.isuserdata(MyData.class));
         assertFalse(table.isuserdata(MyData.class));
         assertFalse(userdataobj.isuserdata(MyData.class));
         assertTrue(userdatacls.isuserdata(MyData.class));
@@ -364,7 +331,6 @@ class TypeTest {
         assertTrue(stringint.toboolean());
         assertTrue(stringlong.toboolean());
         assertTrue(stringdouble.toboolean());
-        assertTrue(thread.toboolean());
         assertTrue(table.toboolean());
         assertTrue(userdataobj.toboolean());
         assertTrue(userdatacls.toboolean());
@@ -385,7 +351,6 @@ class TypeTest {
         assertEquals((byte) sampleint, stringint.tobyte());
         assertEquals((byte) samplelong, stringlong.tobyte());
         assertEquals((byte) sampledouble, stringdouble.tobyte());
-        assertEquals((byte) 0, thread.tobyte());
         assertEquals((byte) 0, table.tobyte());
         assertEquals((byte) 0, userdataobj.tobyte());
         assertEquals((byte) 0, userdatacls.tobyte());
@@ -406,7 +371,6 @@ class TypeTest {
         assertEquals((char) sampleint, (int) stringint.tochar());
         assertEquals((char) samplelong, (int) stringlong.tochar());
         assertEquals((char) sampledouble, (int) stringdouble.tochar());
-        assertEquals((char) 0, thread.tochar());
         assertEquals((char) 0, table.tochar());
         assertEquals((char) 0, userdataobj.tochar());
         assertEquals((char) 0, userdatacls.tochar());
@@ -427,7 +391,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.todouble());
         assertEquals(samplelong, stringlong.todouble());
         assertEquals(sampledouble, stringdouble.todouble());
-        assertEquals(0., thread.todouble());
         assertEquals(0., table.todouble());
         assertEquals(0., userdataobj.todouble());
         assertEquals(0., userdatacls.todouble());
@@ -448,7 +411,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.tofloat());
         assertEquals(samplelong, stringlong.tofloat());
         assertEquals((float) sampledouble, stringdouble.tofloat());
-        assertEquals(0.f, thread.tofloat());
         assertEquals(0.f, table.tofloat());
         assertEquals(0.f, userdataobj.tofloat());
         assertEquals(0.f, userdatacls.tofloat());
@@ -469,7 +431,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.toint());
         assertEquals((int) samplelong, stringlong.toint());
         assertEquals((int) sampledouble, stringdouble.toint());
-        assertEquals(0, thread.toint());
         assertEquals(0, table.toint());
         assertEquals(0, userdataobj.toint());
         assertEquals(0, userdatacls.toint());
@@ -490,7 +451,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.tolong());
         assertEquals(samplelong, stringlong.tolong());
         assertEquals((long) sampledouble, stringdouble.tolong());
-        assertEquals(0L, thread.tolong());
         assertEquals(0L, table.tolong());
         assertEquals(0L, userdataobj.tolong());
         assertEquals(0L, userdatacls.tolong());
@@ -511,7 +471,6 @@ class TypeTest {
         assertEquals((short) sampleint, stringint.toshort());
         assertEquals((short) samplelong, stringlong.toshort());
         assertEquals((short) sampledouble, stringdouble.toshort());
-        assertEquals((short) 0, thread.toshort());
         assertEquals((short) 0, table.toshort());
         assertEquals((short) 0, userdataobj.toshort());
         assertEquals((short) 0, userdatacls.toshort());
@@ -532,7 +491,6 @@ class TypeTest {
         assertEquals(String.valueOf(sampleint), stringint.tojstring());
         assertEquals(String.valueOf(samplelong), stringlong.tojstring());
         assertEquals(String.valueOf(sampledouble), stringdouble.tojstring());
-        assertEquals("thread: ", thread.tojstring().substring(0, 8));
         assertEquals("table: ", table.tojstring().substring(0, 7));
         assertEquals(sampleobject.toString(), userdataobj.tojstring());
         assertEquals(sampledata.toString(), userdatacls.tojstring());
@@ -553,7 +511,6 @@ class TypeTest {
         assertNull(stringint.touserdata());
         assertNull(stringlong.touserdata());
         assertNull(stringdouble.touserdata());
-        assertNull(thread.touserdata());
         assertNull(table.touserdata());
         assertEquals(sampleobject, userdataobj.touserdata());
         assertEquals(sampledata, userdatacls.touserdata());
@@ -592,7 +549,6 @@ class TypeTest {
         throwsError(stringint, "optboolean", boolean.class, Boolean.FALSE);
         throwsError(stringlong, "optboolean", boolean.class, Boolean.FALSE);
         throwsError(stringdouble, "optboolean", boolean.class, Boolean.FALSE);
-        throwsError(thread, "optboolean", boolean.class, Boolean.FALSE);
         throwsError(table, "optboolean", boolean.class, Boolean.FALSE);
         throwsError(userdataobj, "optboolean", boolean.class, Boolean.FALSE);
         throwsError(userdatacls, "optboolean", boolean.class, Boolean.FALSE);
@@ -615,7 +571,6 @@ class TypeTest {
         throwsError(stringint, "optclosure", LuaClosure.class, someclosure);
         throwsError(stringlong, "optclosure", LuaClosure.class, someclosure);
         throwsError(stringdouble, "optclosure", LuaClosure.class, someclosure);
-        throwsError(thread, "optclosure", LuaClosure.class, someclosure);
         throwsError(table, "optclosure", LuaClosure.class, someclosure);
         throwsError(userdataobj, "optclosure", LuaClosure.class, someclosure);
         throwsError(userdatacls, "optclosure", LuaClosure.class, someclosure);
@@ -636,7 +591,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.optdouble(33.));
         assertEquals(samplelong, stringlong.optdouble(33.));
         assertEquals(sampledouble, stringdouble.optdouble(33.));
-        throwsError(thread, "optdouble", double.class, 33.);
         throwsError(table, "optdouble", double.class, 33.);
         throwsError(userdataobj, "optdouble", double.class, 33.);
         throwsError(userdatacls, "optdouble", double.class, 33.);
@@ -660,7 +614,6 @@ class TypeTest {
         throwsError(stringint, "optfunction", LuaFunction.class, somefunc);
         throwsError(stringlong, "optfunction", LuaFunction.class, somefunc);
         throwsError(stringdouble, "optfunction", LuaFunction.class, somefunc);
-        throwsError(thread, "optfunction", LuaFunction.class, somefunc);
         throwsError(table, "optfunction", LuaFunction.class, somefunc);
         throwsError(userdataobj, "optfunction", LuaFunction.class, somefunc);
         throwsError(userdatacls, "optfunction", LuaFunction.class, somefunc);
@@ -681,7 +634,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.optint(33));
         assertEquals((int) samplelong, stringlong.optint(33));
         assertEquals((int) sampledouble, stringdouble.optint(33));
-        throwsError(thread, "optint", int.class, 33);
         throwsError(table, "optint", int.class, 33);
         throwsError(userdataobj, "optint", int.class, 33);
         throwsError(userdatacls, "optint", int.class, 33);
@@ -702,7 +654,6 @@ class TypeTest {
         assertEquals(LuaValue.valueOf(sampleint), stringint.optinteger(LuaValue.valueOf(33)));
         assertEquals(LuaValue.valueOf((int) samplelong), stringlong.optinteger(LuaValue.valueOf(33)));
         assertEquals(LuaValue.valueOf((int) sampledouble), stringdouble.optinteger(LuaValue.valueOf(33)));
-        throwsError(thread, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(table, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(userdataobj, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(userdatacls, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
@@ -723,7 +674,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.optlong(33));
         assertEquals(samplelong, stringlong.optlong(33));
         assertEquals((long) sampledouble, stringdouble.optlong(33));
-        throwsError(thread, "optlong", long.class, 33L);
         throwsError(table, "optlong", long.class, 33L);
         throwsError(userdataobj, "optlong", long.class, 33L);
         throwsError(userdatacls, "optlong", long.class, 33L);
@@ -744,7 +694,6 @@ class TypeTest {
         assertEquals(LuaValue.valueOf(sampleint), stringint.optnumber(LuaValue.valueOf(33)));
         assertEquals(LuaValue.valueOf(samplelong), stringlong.optnumber(LuaValue.valueOf(33)));
         assertEquals(LuaValue.valueOf(sampledouble), stringdouble.optnumber(LuaValue.valueOf(33)));
-        throwsError(thread, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
         throwsError(table, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
         throwsError(userdataobj, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
         throwsError(userdatacls, "optnumber", LuaNumber.class, LuaValue.valueOf(33));
@@ -766,34 +715,10 @@ class TypeTest {
         throwsError(stringint, "opttable", LuaTable.class, table);
         throwsError(stringlong, "opttable", LuaTable.class, table);
         throwsError(stringdouble, "opttable", LuaTable.class, table);
-        throwsError(thread, "opttable", LuaTable.class, table);
         assertEquals(table, table.opttable(table));
         assertEquals(table, table.opttable(null));
         throwsError(userdataobj, "opttable", LuaTable.class, table);
         throwsError(userdatacls, "opttable", LuaTable.class, table);
-    }
-
-    @Test
-    void testOptThread() {
-        assertEquals(thread, somenil.optthread(thread));
-        assertNull(somenil.optthread(null));
-        throwsError(sometrue, "optthread", LuaThread.class, thread);
-        throwsError(somefalse, "optthread", LuaThread.class, thread);
-        throwsError(zero, "optthread", LuaThread.class, thread);
-        throwsError(intint, "optthread", LuaThread.class, thread);
-        throwsError(longdouble, "optthread", LuaThread.class, thread);
-        throwsError(doubledouble, "optthread", LuaThread.class, thread);
-        throwsError(somefunc, "optthread", LuaThread.class, thread);
-        throwsError(someclosure, "optthread", LuaThread.class, thread);
-        throwsError(stringstring, "optthread", LuaThread.class, thread);
-        throwsError(stringint, "optthread", LuaThread.class, thread);
-        throwsError(stringlong, "optthread", LuaThread.class, thread);
-        throwsError(stringdouble, "optthread", LuaThread.class, thread);
-        throwsError(table, "optthread", LuaThread.class, thread);
-        assertEquals(thread, thread.optthread(thread));
-        assertEquals(thread, thread.optthread(null));
-        throwsError(userdataobj, "optthread", LuaThread.class, thread);
-        throwsError(userdatacls, "optthread", LuaThread.class, thread);
     }
 
     @Test
@@ -812,7 +737,6 @@ class TypeTest {
         assertEquals(samplestringint, stringint.optjstring("xyz"));
         assertEquals(samplestringlong, stringlong.optjstring("xyz"));
         assertEquals(samplestringdouble, stringdouble.optjstring("xyz"));
-        throwsError(thread, "optjstring", String.class, "xyz");
         throwsError(table, "optjstring", String.class, "xyz");
         throwsError(userdataobj, "optjstring", String.class, "xyz");
         throwsError(userdatacls, "optjstring", String.class, "xyz");
@@ -834,7 +758,6 @@ class TypeTest {
         assertEquals(stringint, stringint.optstring(LuaValue.valueOf("xyz")));
         assertEquals(stringlong, stringlong.optstring(LuaValue.valueOf("xyz")));
         assertEquals(stringdouble, stringdouble.optstring(LuaValue.valueOf("xyz")));
-        throwsError(thread, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
         throwsError(table, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
         throwsError(userdataobj, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
         throwsError(userdatacls, "optstring", LuaString.class, LuaValue.valueOf("xyz"));
@@ -894,7 +817,6 @@ class TypeTest {
         throwsErrorOptUserdataClass(stringlong, MyData.class, sampledata);
         throwsErrorOptUserdataClass(stringdouble, MyData.class, sampledata);
         throwsErrorOptUserdataClass(table, MyData.class, sampledata);
-        throwsErrorOptUserdataClass(thread, MyData.class, sampledata);
         assertEquals(sampleobject, userdataobj.optuserdata(Object.class, sampleobject));
         assertEquals(sampleobject, userdataobj.optuserdata(null));
         assertEquals(sampledata, userdatacls.optuserdata(MyData.class, sampledata));
@@ -925,7 +847,6 @@ class TypeTest {
         assertEquals(stringint, stringint.optvalue(LuaConstant.TRUE));
         assertEquals(stringlong, stringlong.optvalue(LuaConstant.TRUE));
         assertEquals(stringdouble, stringdouble.optvalue(LuaConstant.TRUE));
-        assertEquals(thread, thread.optvalue(LuaConstant.TRUE));
         assertEquals(table, table.optvalue(LuaConstant.TRUE));
         assertEquals(userdataobj, userdataobj.optvalue(LuaConstant.TRUE));
         assertEquals(userdatacls, userdatacls.optvalue(LuaConstant.TRUE));
@@ -961,7 +882,6 @@ class TypeTest {
         throwsErrorReq(stringint, "checkboolean");
         throwsErrorReq(stringlong, "checkboolean");
         throwsErrorReq(stringdouble, "checkboolean");
-        throwsErrorReq(thread, "checkboolean");
         throwsErrorReq(table, "checkboolean");
         throwsErrorReq(userdataobj, "checkboolean");
         throwsErrorReq(userdatacls, "checkboolean");
@@ -983,7 +903,6 @@ class TypeTest {
         throwsErrorReq(stringint, "checkclosure");
         throwsErrorReq(stringlong, "checkclosure");
         throwsErrorReq(stringdouble, "checkclosure");
-        throwsErrorReq(thread, "checkclosure");
         throwsErrorReq(table, "checkclosure");
         throwsErrorReq(userdataobj, "checkclosure");
         throwsErrorReq(userdatacls, "checkclosure");
@@ -1004,7 +923,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.checkdouble());
         assertEquals(samplelong, stringlong.checkdouble());
         assertEquals(sampledouble, stringdouble.checkdouble());
-        throwsErrorReq(thread, "checkdouble");
         throwsErrorReq(table, "checkdouble");
         throwsErrorReq(userdataobj, "checkdouble");
         throwsErrorReq(userdatacls, "checkdouble");
@@ -1027,7 +945,6 @@ class TypeTest {
         throwsErrorReq(stringint, "checkfunction");
         throwsErrorReq(stringlong, "checkfunction");
         throwsErrorReq(stringdouble, "checkfunction");
-        throwsErrorReq(thread, "checkfunction");
         throwsErrorReq(table, "checkfunction");
         throwsErrorReq(userdataobj, "checkfunction");
         throwsErrorReq(userdatacls, "checkfunction");
@@ -1048,7 +965,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.checkint());
         assertEquals((int) samplelong, stringlong.checkint());
         assertEquals((int) sampledouble, stringdouble.checkint());
-        throwsErrorReq(thread, "checkint");
         throwsErrorReq(table, "checkint");
         throwsErrorReq(userdataobj, "checkint");
         throwsErrorReq(userdatacls, "checkint");
@@ -1069,7 +985,6 @@ class TypeTest {
         assertEquals(LuaValue.valueOf(sampleint), stringint.checkinteger());
         assertEquals(LuaValue.valueOf((int) samplelong), stringlong.checkinteger());
         assertEquals(LuaValue.valueOf((int) sampledouble), stringdouble.checkinteger());
-        throwsErrorReq(thread, "checkinteger");
         throwsErrorReq(table, "checkinteger");
         throwsErrorReq(userdataobj, "checkinteger");
         throwsErrorReq(userdatacls, "checkinteger");
@@ -1090,7 +1005,6 @@ class TypeTest {
         assertEquals(sampleint, stringint.checklong());
         assertEquals(samplelong, stringlong.checklong());
         assertEquals((long) sampledouble, stringdouble.checklong());
-        throwsErrorReq(thread, "checklong");
         throwsErrorReq(table, "checklong");
         throwsErrorReq(userdataobj, "checklong");
         throwsErrorReq(userdatacls, "checklong");
@@ -1111,7 +1025,6 @@ class TypeTest {
         assertEquals(LuaValue.valueOf(sampleint), stringint.checknumber());
         assertEquals(LuaValue.valueOf(samplelong), stringlong.checknumber());
         assertEquals(LuaValue.valueOf(sampledouble), stringdouble.checknumber());
-        throwsErrorReq(thread, "checknumber");
         throwsErrorReq(table, "checknumber");
         throwsErrorReq(userdataobj, "checknumber");
         throwsErrorReq(userdatacls, "checknumber");
@@ -1132,33 +1045,10 @@ class TypeTest {
         throwsErrorReq(stringint, "checktable");
         throwsErrorReq(stringlong, "checktable");
         throwsErrorReq(stringdouble, "checktable");
-        throwsErrorReq(thread, "checktable");
         assertEquals(table, table.checktable());
         assertEquals(table, table.checktable());
         throwsErrorReq(userdataobj, "checktable");
         throwsErrorReq(userdatacls, "checktable");
-    }
-
-    @Test
-    void testCheckThread() {
-        throwsErrorReq(somenil, "checkthread");
-        throwsErrorReq(sometrue, "checkthread");
-        throwsErrorReq(somefalse, "checkthread");
-        throwsErrorReq(zero, "checkthread");
-        throwsErrorReq(intint, "checkthread");
-        throwsErrorReq(longdouble, "checkthread");
-        throwsErrorReq(doubledouble, "checkthread");
-        throwsErrorReq(somefunc, "checkthread");
-        throwsErrorReq(someclosure, "checkthread");
-        throwsErrorReq(stringstring, "checkthread");
-        throwsErrorReq(stringint, "checkthread");
-        throwsErrorReq(stringlong, "checkthread");
-        throwsErrorReq(stringdouble, "checkthread");
-        throwsErrorReq(table, "checkthread");
-        assertEquals(thread, thread.checkthread());
-        assertEquals(thread, thread.checkthread());
-        throwsErrorReq(userdataobj, "checkthread");
-        throwsErrorReq(userdatacls, "checkthread");
     }
 
     @Test
@@ -1176,7 +1066,6 @@ class TypeTest {
         assertEquals(samplestringint, stringint.checkjstring());
         assertEquals(samplestringlong, stringlong.checkjstring());
         assertEquals(samplestringdouble, stringdouble.checkjstring());
-        throwsErrorReq(thread, "checkjstring");
         throwsErrorReq(table, "checkjstring");
         throwsErrorReq(userdataobj, "checkjstring");
         throwsErrorReq(userdatacls, "checkjstring");
@@ -1197,7 +1086,6 @@ class TypeTest {
         assertEquals(stringint, stringint.checkstring());
         assertEquals(stringlong, stringlong.checkstring());
         assertEquals(stringdouble, stringdouble.checkstring());
-        throwsErrorReq(thread, "checkstring");
         throwsErrorReq(table, "checkstring");
         throwsErrorReq(userdataobj, "checkstring");
         throwsErrorReq(userdatacls, "checkstring");
@@ -1254,7 +1142,6 @@ class TypeTest {
         throwsErrorReqCheckUserdataClass(stringlong, MyData.class);
         throwsErrorReqCheckUserdataClass(stringdouble, MyData.class);
         throwsErrorReqCheckUserdataClass(table, MyData.class);
-        throwsErrorReqCheckUserdataClass(thread, MyData.class);
         assertEquals(sampleobject, userdataobj.checkuserdata(Object.class));
         assertEquals(sampleobject, userdataobj.checkuserdata());
         assertEquals(sampledata, userdatacls.checkuserdata(MyData.class));
@@ -1284,7 +1171,6 @@ class TypeTest {
         assertEquals(stringint, stringint.checknotnil());
         assertEquals(stringlong, stringlong.checknotnil());
         assertEquals(stringdouble, stringdouble.checknotnil());
-        assertEquals(thread, thread.checknotnil());
         assertEquals(table, table.checknotnil());
         assertEquals(userdataobj, userdataobj.checknotnil());
         assertEquals(userdatacls, userdatacls.checknotnil());

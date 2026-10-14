@@ -10,7 +10,7 @@ end
 -- arg type tests for math library functions
 local somenumber = {1,0.75,'-1','-0.25'}
 local somepositive = {1,0.75,'2', '2.5'}
-local notanumber = {nil,astring,aboolean,afunction,atable,athread}
+local notanumber = {nil,astring,aboolean,afunction,atable}
 local nonnumber = {astring,aboolean,afunction,atable}
 
 local singleargfunctions = { 

@@ -15,33 +15,32 @@ aboolean  = true
 atable    = {[akey]=456}
 afunction = function() end
 anil      = nil
-athread   = coroutine.create(afunction)
 
-anylua = { nil, astring, anumber, aboolean, atable, afunction, athread }
+anylua = { nil, astring, anumber, aboolean, atable, afunction }
 
 somestring   = { astring, anumber }
 somenumber   = { anumber, astrnum }
 someboolean  = { aboolean }
 sometable    = { atable }
 somefunction = { afunction }
-somethread   = { athread }
+somethread   = {}
 somenil      = { anil }
 somekey      = { akey }
 notakey      = { astring, anumber, aboolean, atable, afunction }
 
-notastring   = { nil, aboolean, atable, afunction, athread }
-notanumber   = { nil, astring, aboolean, atable, afunction, athread }
-notaboolean  = { nil, astring, anumber, atable, afunction, athread }
-notatable    = { nil, astring, anumber, aboolean, afunction, athread }
-notafunction = { nil, astring, anumber, aboolean, atable, athread }
+notastring   = { nil, aboolean, atable, afunction }
+notanumber   = { nil, astring, aboolean, atable, afunction }
+notaboolean  = { nil, astring, anumber, atable, afunction }
+notatable    = { nil, astring, anumber, aboolean, afunction }
+notafunction = { nil, astring, anumber, aboolean, atable }
 notathread   = { nil, astring, anumber, aboolean, atable, afunction }
-notanil      = { astring, anumber, aboolean, atable, afunction, athread }
+notanil      = { astring, anumber, aboolean, atable, afunction }
 
-nonstring   = { aboolean, atable, afunction, athread }
-nonnumber   = { astring, aboolean, atable, afunction, athread }
-nonboolean  = { astring, anumber, atable, afunction, athread }
-nontable    = { astring, anumber, aboolean, afunction, athread }
-nonfunction = { astring, anumber, aboolean, atable, athread }
+nonstring   = { aboolean, atable, afunction }
+nonnumber   = { astring, aboolean, atable, afunction }
+nonboolean  = { astring, anumber, atable, afunction }
+nontable    = { astring, anumber, aboolean, afunction }
+nonfunction = { astring, anumber, aboolean, atable }
 nonthread   = { astring, anumber, aboolean, atable, afunction }
 nonkey      = { astring, anumber, aboolean, atable, afunction }
 

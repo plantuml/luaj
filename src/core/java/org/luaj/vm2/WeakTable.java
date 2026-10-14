@@ -307,7 +307,6 @@ public class WeakTable implements Metatable {
 	protected static LuaValue weaken(LuaValue value ) {
 		switch (value.getType()) {
 			case FUNCTION:
-			case THREAD:
 			case TABLE:
 				return new WeakValue(value);
 			case USERDATA:

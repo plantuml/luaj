@@ -506,7 +506,6 @@ public class LuaTable extends LuaValue implements Metatable {
 		switch (key.getType()) {
 			case NUMBER:
 			case TABLE:
-			case THREAD:
 			case LIGHT_USERDATA:
 			case USERDATA:
 				return hashmod( key.hashCode(), hashMask );

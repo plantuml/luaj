@@ -96,7 +96,6 @@ public class LuaNil extends LuaValue {
 	public long        optlong(long defval)                { return defval; }
 	public LuaNumber optnumber(LuaNumber defval)         { return defval; }
 	public LuaTable opttable(LuaTable defval)           { return defval; }
-	public LuaThread optthread(LuaThread defval)         { return defval; }
 	public String      optjstring(String defval)            { return defval; }
 	public LuaString   optstring(LuaString defval)         { return defval; }
 	public Object      optuserdata(Object defval)          { return defval; }

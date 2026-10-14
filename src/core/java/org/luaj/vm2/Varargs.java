@@ -144,13 +144,6 @@ public abstract class Varargs {
 	 * */
 	public boolean istable(int i)      { return arg(i).istable(); }
 
-	/** Tests if argument i is a thread.
-	 * @param i the index of the argument to test, 1 is the first argument
-	 * @return true if the argument exists and is a lua thread, false otherwise
-	 * @see LuaType#THREAD
-	 * */
-	public boolean isthread(int i)     { return arg(i).isthread(); }
-
 	/** Tests if argument i is a userdata.
 	 * @param i the index of the argument to test, 1 is the first argument
 	 * @return true if the argument exists and is a userdata, false otherwise
@@ -240,13 +233,6 @@ public abstract class Varargs {
 	 * @exception LuaError if the argument is not a lua table
 	 * */
 	public LuaTable opttable(int i, LuaTable defval)           { return arg(i).opttable(defval); }
-
-	/** Return argument i as a LuaThread if a lua thread, {@code defval} if nil, or throw a LuaError  if any other type.
-	 * @param i the index of the argument to test, 1 is the first argument
-	 * @return LuaThread value if a thread, or defval if not supplied or nil
-	 * @exception LuaError if the argument is not a lua thread
-	 * */
-	public LuaThread    optthread(int i, LuaThread defval)         { return arg(i).optthread(defval); }
 
 	/** Return argument i as a java Object if a userdata, {@code defval} if nil, or throw a LuaError  if any other type.
 	 * @param i the index of the argument to test, 1 is the first argument
@@ -347,13 +333,6 @@ public abstract class Varargs {
 	 * @exception LuaError if the argument is not a lua table
 	 * */
 	public LuaTable     checktable(int i)            { return arg(i).checktable(); }
-
-	/** Return argument i as a LuaThread if a lua thread, or throw an error if any other type.
-	 * @param i the index of the argument to test, 1 is the first argument
-	 * @return LuaThread value if a thread
-	 * @exception LuaError if the argument is not a lua thread
-	 * */
-	public LuaThread    checkthread(int i)           { return arg(i).checkthread(); }
 
 	/** Return argument i as a java Object if a userdata, or throw an error if any other type.
 	 * @param i the index of the argument to test, 1 is the first argument

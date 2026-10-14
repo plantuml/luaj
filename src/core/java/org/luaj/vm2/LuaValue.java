@@ -291,18 +291,6 @@ public abstract class LuaValue extends Varargs {
     }
 
     /**
-     * Check if {@code this} is a {@code thread}
-     *
-     * @return true if this is a {@code thread}, otherwise false
-     * @see #checkthread()
-     * @see #optthread(LuaThread)
-     * @see LuaType#THREAD
-     */
-    public boolean isthread() {
-        return false;
-    }
-
-    /**
      * Check if {@code this} is a {@code table}
      *
      * @return true if this is a {@code table}, otherwise false
@@ -803,22 +791,6 @@ public abstract class LuaValue extends Varargs {
     }
 
     /**
-     * Check that optional argument is a thread and return as {@link LuaThread}
-     *
-     * @param defval {@link LuaThread} to return if {@code this} is nil or none
-     * @return {@code this} cast to {@link LuaTable} if a thread, {@code defval}
-     * if nil or none, throws {@link LuaError} if some other type
-     * @throws LuaError if was not a thread or nil or none.
-     * @see #checkthread()
-     * @see #isthread()
-     * @see LuaType#THREAD
-     */
-    public LuaThread optthread(LuaThread defval) {
-        argumentError("thread");
-        return null;
-    }
-
-    /**
      * Check that optional argument is a userdata and return the Object instance
      *
      * @param defval Object to return if {@code this} is nil or none
@@ -1120,21 +1092,6 @@ public abstract class LuaValue extends Varargs {
      */
     public LuaTable checktable() {
         argumentError("table");
-        return null;
-    }
-
-    /**
-     * Check that this is a {@link LuaThread}, or throw {@link LuaError} if it
-     * is not
-     *
-     * @return {@code this} if it is a {@link LuaThread}
-     * @throws LuaError if {@code this} is not a {@link LuaThread}
-     * @see #isthread()
-     * @see #optthread(LuaThread)
-     * @see LuaType#THREAD
-     */
-    public LuaThread checkthread() {
-        argumentError("thread");
         return null;
     }
 
@@ -1709,7 +1666,6 @@ public abstract class LuaValue extends Varargs {
      * @see LuaNumber#s_metatable
      * @see LuaNil#s_metatable
      * @see LuaFunction#s_metatable
-     * @see LuaThread#s_metatable
      */
     public LuaValue getmetatable() {
         return null;
@@ -1729,7 +1685,6 @@ public abstract class LuaValue extends Varargs {
      * @see LuaNumber#s_metatable
      * @see LuaNil#s_metatable
      * @see LuaFunction#s_metatable
-     * @see LuaThread#s_metatable
      */
     public LuaValue setmetatable(LuaValue metatable) {
         return argumentError("table");

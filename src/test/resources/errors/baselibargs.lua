@@ -13,7 +13,7 @@ checkallerrors('assert',{{nil,false,n=2},{'message'}},'message')
 banner('collectgarbage')
 checkallpass('collectgarbage',{{'collect','count'}},true)
 checkallerrors('collectgarbage',{{astring, anumber}},'bad argument')
-checkallerrors('collectgarbage',{{aboolean, atable, afunction, athread}},'string expected')
+checkallerrors('collectgarbage',{{aboolean, atable, afunction}},'string expected')
 
 -- dofile
 banner('dofile')
@@ -45,7 +45,7 @@ checkallpass('load', {{'return'},{'mychunk'}})
 -- FIXME why is the result not printed?
 --checkallpass('load', {{'return a ... b'},{'mychunk'}},true)
 checkallerrors('load', {somefunction,nonstring}, 'bad argument')
-checkallerrors('load', {{nil,aboolean,atable,athread},notastring}, 'bad argument')
+checkallerrors('load', {{nil,aboolean,atable},notastring}, 'bad argument')
 checkallerrors('load', {{'return'},nonstring}, 'bad argument')
 
 -- loadfile
@@ -120,9 +120,9 @@ checkallerrors('tonumber',{somenumber,{1,37,atable,afunction,aboolean}},'bad arg
 -- tostring
 banner('tostring')
 checkallpass('tostring',{{astring,anumber,aboolean}})
-checkallpass('tostring',{{atable,afunction,athread}},true)
+checkallpass('tostring',{{atable,afunction}},true)
 checkallpass('tostring',{{astring,anumber,aboolean},{'anchor'}})
-checkallpass('tostring',{{atable,afunction,athread},{'anchor'}},true)
+checkallpass('tostring',{{atable,afunction},{'anchor'}},true)
 checkallerrors('tostring',{},'bad argument')
 
 -- type

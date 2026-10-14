@@ -21,15 +21,11 @@ public class CompatibilityTest {
             LuaBoolean.s_metatable = null;
             LuaNumber.s_metatable = null;
             LuaFunction.s_metatable = null;
-            LuaThread.s_metatable = null;
             LuaString.s_metatable = savedStringMetatable;
         }
 
         @Test
         void testBaseLib() { runTest("baselib"); }
-
-        @Test
-        void testCoroutineLib() { runTest("coroutinelib"); }
 
         @Test
         void testErrors() { runTest("errors"); }

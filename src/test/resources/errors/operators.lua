@@ -2,7 +2,7 @@ package.path = "?.lua;test/lua/errors/?.lua"
 require 'args'
 
 -- arg types for language operator
-local notstringortable = { nil, anumber, aboolean, afunction, athread, n=5 }
+local notstringortable = { nil, anumber, aboolean, afunction, n=4 }
 -- ========= unary operators: - # not
 
 -- unary minus -

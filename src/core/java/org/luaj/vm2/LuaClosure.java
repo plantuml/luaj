@@ -519,17 +519,16 @@ public class LuaClosure extends LuaFunction {
 	 * */
 	String errorHook(String msg, int level) {
 		if (globals == null ) return msg;
-		final LuaThread r = globals.running;
-		if (r.errorfunc == null)
+		if (globals.errorfunc == null)
 			return msg;
-		final LuaValue e = r.errorfunc;
-		r.errorfunc = null;
+		final LuaValue e = globals.errorfunc;
+		globals.errorfunc = null;
 		try {
 			return e.call( valueOf(msg) ).tojstring();
 		} catch ( Throwable t ) {
 			return "error in error handling";
 		} finally {
-			r.errorfunc = e;
+			globals.errorfunc = e;
 		}
 	}
 
