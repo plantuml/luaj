@@ -5,7 +5,6 @@ import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.lib.jse.JsePlatform;
 import org.luaj.vm2.lib.jse.JseProcess;
-import org.luaj.vm2.luajc.LuaJC;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -14,10 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class PlatformTestCase extends ResourcesTestCase {
-    public static final boolean nocompile = "true".equals(System.getProperty("nocompile"));
-
     public enum PlatformType {
-        JSE, LUAJIT,
+        JSE,
     }
 
     private PlatformType platform;
@@ -26,7 +23,6 @@ public class PlatformTestCase extends ResourcesTestCase {
         switch (platform) {
             default:
             case JSE:
-            case LUAJIT:
                 globals = JsePlatform.debugGlobals();
                 break;
         }
@@ -77,18 +73,7 @@ public class PlatformTestCase extends ResourcesTestCase {
         try (script) {
             if (script == null)
                 fail("Could not load script for test case: " + name);
-            switch (this.platform) {
-                case LUAJIT:
-                    if (nocompile) {
-                        LuaValue c = (LuaValue) Class.forName(name).newInstance();
-                        return c;
-                    } else {
-                        LuaJC.install(globals);
-                        return globals.load(script, name, "bt", globals);
-                    }
-                default:
-                    return globals.load(script, "@" + name + ".lua", "bt", globals);
-            }
+            return globals.load(script, "@" + name + ".lua", "bt", globals);
         } catch (Exception e) {
             e.printStackTrace();
             throw new IOException(e.toString());

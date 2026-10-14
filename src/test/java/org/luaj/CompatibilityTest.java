@@ -2,7 +2,6 @@ package org.luaj;
 
 import org.junit.jupiter.api.*;
 import org.luaj.vm2.*;
-import org.luaj.vm2.luajc.LuaJC;
 
 public class CompatibilityTest {
     abstract static class CompatibilityTestCase extends PlatformTestCase {
@@ -83,46 +82,5 @@ public class CompatibilityTest {
             System.setProperty("JME", "false");
             super.setUp();
         }
-    }
-
-    @Nested
-    class LuaJCCompatibilityTest extends CompatibilityTestCase {
-
-        @BeforeEach
-        @Override
-        protected void setUp() {
-            setPlatform(PlatformTestCase.PlatformType.LUAJIT);
-            System.setProperty("JME", "false");
-            super.setUp();
-            LuaJC.install(globals);
-        }
-
-        // not supported on this platform - don't test
-        @Override
-        void testDebugLib() {}
-
-        // FIXME Test failures
-        @Override
-        void testBaseLib() {}
-
-        // FIXME Test failures
-        @Override
-        void testCoroutineLib() {}
-
-        // FIXME Test failures
-        @Override
-        void testIoLib() {}
-
-        // FIXME Test failures
-        @Override
-        void testMetatags() {}
-
-        // FIXME Test failures
-        @Override
-        void testOsLib() {}
-
-        // FIXME Test failures
-        @Override
-        void testStringLib() {}
     }
 }

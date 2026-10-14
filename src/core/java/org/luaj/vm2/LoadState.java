@@ -83,7 +83,6 @@ import org.luaj.vm2.compiler.DumpState;
 * @see LuaClosure
 * @see LuaFunction
 * @see LuaC
-* @see org.luaj.vm2.luajc.LuaJC
 * @see Globals#compiler
 * @see Globals#load(InputStream, String, String, LuaValue)
 */

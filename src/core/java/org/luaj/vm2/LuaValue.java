@@ -4375,7 +4375,7 @@ public abstract class LuaValue extends Varargs {
     }
 
     /**
-     * Hook for implementations such as LuaJC to load the environment of the
+     * Hook for implementations to load the environment of the
      * main chunk into the first upvalue location. If the function has no
      * upvalues or is not a main chunk, calling this will be no effect.
      *

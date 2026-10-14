@@ -55,13 +55,9 @@ import org.luaj.vm2.compiler.LuaC;
  * <pre> {@code
  * Globals globals = JsePlatform.standardGlobals();
  * LuaFunction f = globals.load(new StringReader(script), "script");
- * LuaClosure c = f.checkclosure();  // This may fail if LuaJC is installed.
+ * LuaClosure c = f.checkclosure();
  * c.call();
  * }</pre>
- * <p>
- * In this example, the "checkclosure()" may fail if direct lua-to-java-bytecode
- * compiling using LuaJC is installed, because no LuaClosure is created in that case
- * and the value returned is a {@link LuaFunction} but not a {@link LuaClosure}.
  * <p>
  * Since a {@link LuaClosure} is a {@link LuaFunction} which is a {@link LuaValue},
  * all the value operations can be used directly such as:

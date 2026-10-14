@@ -33,9 +33,6 @@ import org.luaj.vm2.Print;
  * The debug library in luaj tries to emulate the behavior of the corresponding C-based lua library.
  * To do this, it must maintain a separate stack of calls to {@link LuaClosure} and {@link LibFunction}
  * instances.
- * Especially when lua-to-java bytecode compiling is being used
- * via a {@link Globals.Compiler} such as {@link org.luaj.vm2.luajc.LuaJC},
- * this cannot be done in all cases.
  * <p>
  * Typically, this library is included as part of a call to either
  * {@link org.luaj.vm2.lib.jse.JsePlatform#debugGlobals()} or

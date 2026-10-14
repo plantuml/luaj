@@ -73,12 +73,6 @@ import org.luaj.vm2.lib.ResourceFinder;
  * <li>load lua bytecode to a {@link Prototype} using {@link Undumper}
  * <li>construct {@link LuaClosure} from {@link Prototype} with {@link Globals} using {@link Loader}
  * </ul>
- * <p>
- * There are alternate flows when the direct lua-to-Java bytecode compiling {@link org.luaj.vm2.luajc.LuaJC} is used.
- * <ul>
- * <li>compile lua to lua bytecode using {@link Compiler} or load precompiled code using {@link Undumper}
- * <li>convert lua bytecode to equivalent Java bytecode using {@link org.luaj.vm2.luajc.LuaJC} that implements {@link Loader} directly
- * </ul>
  * 
  * <h3>Java Field</h3>
  * Certain public fields are provided that contain the current values of important global state:
@@ -113,7 +107,6 @@ import org.luaj.vm2.lib.ResourceFinder;
  * @see Undumper
  * @see ResourceFinder
  * @see LuaC
- * @see org.luaj.vm2.luajc.LuaJC
  */
 public class Globals extends LuaTable {
 

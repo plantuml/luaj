@@ -65,7 +65,6 @@ import org.luaj.vm2.Globals;
  * @see #install(Globals)
  * @see Globals#compiler
  * @see Globals#loader
- * @see org.luaj.vm2.luajc.LuaJC
  * @see org.luaj.vm2.lib.jse.JsePlatform
  * @see BaseLib
  * @see LuaValue
