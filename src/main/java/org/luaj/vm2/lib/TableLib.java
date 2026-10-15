@@ -65,6 +65,7 @@ public class TableLib extends TwoArgFunction {
 		LuaTable table = new LuaTable();
 		table.set("concat", new concat());
 		table.set("insert", new insert());
+		table.set("move", new move());
 		table.set("pack", new pack());
 		table.set("remove", new remove());
 		table.set("sort", new sort());
@@ -124,6 +125,33 @@ public class TableLib extends TwoArgFunction {
 		}
 	}
 	
+	// "move" (a1, f, e, t [,a2]) -> a2 ; reads and writes through __index / __newindex
+	static class move extends VarArgFunction {
+		@Override
+		public Varargs invoke(Varargs args) {
+			LuaTable a1 = args.arg(1).checktable();
+			int f = args.checkint(2);
+			int e = args.checkint(3);
+			int t = args.checkint(4);
+			LuaTable tt = args.isnoneornil(5)? a1: args.arg(5).checktable();
+			if (e >= f) {
+				if (!(f > 0 || e < Integer.MAX_VALUE + f))
+					argumentError(3, "too many elements to move");
+				long n = (long) e - f + 1;
+				if (t > Integer.MAX_VALUE - n + 1)
+					argumentError(4, "destination wrap around");
+				if (t > e || t <= f || tt != a1) {
+					for (int i = 0; i < n; i++)
+						tt.set(t + i, a1.get(f + i));
+				} else {
+					for (int i = (int) n - 1; i >= 0; i--)
+						tt.set(t + i, a1.get(f + i));
+				}
+			}
+			return tt;
+		}
+	}
+
 	// "pack" (...) -> table
 	static class pack extends VarArgFunction {
 		public Varargs invoke(Varargs args) {

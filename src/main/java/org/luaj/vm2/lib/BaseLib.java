@@ -117,7 +117,7 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 		next next;
 		env.set("next", next = new next());
 		env.set("pairs", new lua_pairsBase(LuaConstant.MetaTag.PAIRS, LuaConstant.NIL, next));
-		env.set("ipairs", new lua_pairsBase(LuaConstant.MetaTag.IPAIRS, LuaConstant.ZERO, new inext()));
+		env.set("ipairs", new ipairs());
 
 		return env;
 	}
@@ -456,11 +456,24 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 		}
 	}
 
-	// "inext" ( table, [int-index] ) -> next-index, next-value
-	static final class inext extends VarArgFunction {
+	// "ipairs" ( t ) -> iterator, t, 0 ; like Lua 5.3, any value is accepted and the
+	// elements are read with the __index metamethod (there is no __ipairs any more)
+	static final class ipairs extends VarArgFunction {
+		static final ipairsIter ITER = new ipairsIter();
 		@Override
 		public Varargs invoke(Varargs args) {
-			return args.checktable(1).inext(args.arg(2));
+			if (args.narg() < 1)
+				argumentError(1, "table expected, got no value");
+			return varargsOf(ITER, args.arg1(), LuaConstant.ZERO);
+		}
+	}
+
+	static final class ipairsIter extends VarArgFunction {
+		@Override
+		public Varargs invoke(Varargs args) {
+			int i = args.checkint(2) + 1;
+			LuaValue v = args.arg1().get(i);
+			return v.isnil()? LuaConstant.NIL: varargsOf(LuaInteger.valueOf(i), v);
 		}
 	}
 
