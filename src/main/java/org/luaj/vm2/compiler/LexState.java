@@ -83,12 +83,12 @@ public class LexState extends Constants {
 	** grep "ORDER OPR" if you change these enums
 	*/
 	static final int
-	  OPR_ADD=0, OPR_SUB=1, OPR_MUL=2, OPR_DIV=3, OPR_MOD=4, OPR_POW=5,
-	  OPR_CONCAT=6,
-	  OPR_NE=7, OPR_EQ=8,
-	  OPR_LT=9, OPR_LE=10, OPR_GT=11, OPR_GE=12,
-	  OPR_AND=13, OPR_OR=14,
-	  OPR_NOBINOPR=15;
+	  OPR_ADD=0, OPR_SUB=1, OPR_MUL=2, OPR_DIV=3, OPR_MOD=4, OPR_IDIV=5, OPR_POW=6,
+	  OPR_CONCAT=7,
+	  OPR_NE=8, OPR_EQ=9,
+	  OPR_LT=10, OPR_LE=11, OPR_GT=12, OPR_GE=13,
+	  OPR_AND=14, OPR_OR=15,
+	  OPR_NOBINOPR=16;
 
 	static final int
 		OPR_MINUS=0, OPR_NOT=1, OPR_LEN=2, OPR_NOUNOPR=3;
@@ -147,7 +147,7 @@ public class LexState extends Constants {
 	    "end", "false", "for", "function", "goto", "if",
 	    "in", "local", "nil", "not", "or", "repeat",
 	    "return", "then", "true", "until", "while",
-	    "..", "...", "==", ">=", "<=", "~=",
+	    "..", "...", "==", ">=", "<=", "~=", "//",
 	    "::", "<eof>", "<number>", "<name>", "<string>",
 	};
 
@@ -158,8 +158,8 @@ public class LexState extends Constants {
 		TK_IN=268, TK_LOCAL=269, TK_NIL=270, TK_NOT=271, TK_OR=272, TK_REPEAT=273,
 		TK_RETURN=274, TK_THEN=275, TK_TRUE=276, TK_UNTIL=277, TK_WHILE=278,
 		/* other terminal symbols */
-		TK_CONCAT=279, TK_DOTS=280, TK_EQ=281, TK_GE=282, TK_LE=283, TK_NE=284,
-		TK_DBCOLON=285, TK_EOF=286, TK_NUMBER=287, TK_NAME=288, TK_STRING=289;
+		TK_CONCAT=279, TK_DOTS=280, TK_EQ=281, TK_GE=282, TK_LE=283, TK_NE=284, TK_IDIV=285,
+		TK_DBCOLON=286, TK_EOF=287, TK_NUMBER=288, TK_NAME=289, TK_STRING=290;
 	  
 	final static int FIRST_RESERVED = TK_AND;
 	final static int NUM_RESERVED = TK_WHILE+1-FIRST_RESERVED;
@@ -332,67 +332,16 @@ public class LexState extends Constants {
 				p[n] = to;
 	}
 
-	LuaValue strx2number(String str, SemInfo seminfo) {
-		char[] c = str.toCharArray();
-		int s = 0;
-		while ( s < c.length && isspace(c[s]))
-			++s;
-		// Check for negative sign
-		double sgn = 1.0;
-		if (s < c.length && c[s] == '-') {
-			sgn = -1.0;
-			++s;
-		}
-		/* Check for "0x" */
-		if (s + 2 >= c.length )
-			return LuaConstant.ZERO;
-		if (c[s++] != '0')
-			return LuaConstant.ZERO;
-		if (c[s] != 'x' && c[s] != 'X')
-			return LuaConstant.ZERO;
-		++s;
-
-		// read integer part.
-		double m = 0;
-		int e = 0;
-		while (s < c.length && isxdigit(c[s]))
-			m = (m * 16) + hexvalue(c[s++]);
-		if (s < c.length && c[s] == '.') {
-			++s;  // skip dot
-			while (s < c.length && isxdigit(c[s])) {
-				m = (m * 16) + hexvalue(c[s++]);
-				e -= 4;  // Each fractional part shifts right by 2^4
-			}
-		}
-		if (s < c.length && (c[s] == 'p' || c[s] == 'P')) {
-			++s;
-			int exp1 = 0;
-			boolean neg1 = false;
-			if (s < c.length && c[s] == '-') {
-				neg1 = true;
-				++s;
-			}
-			while (s < c.length && isdigit(c[s]))
-				exp1 = exp1 * 10 + c[s++] - '0';
-			if (neg1)
-				exp1 = -exp1;
-			e += exp1;
-		}
-		return LuaValue.valueOf(sgn * m * MathLib.dpow_d(2.0, e));
-	}
-	
+	/**
+	 * Convert the text of a numeral. A decimal integer that fits in 32 bits is an integer, a hexadecimal
+	 * integer wraps around modulo 2^32, any other numeral (decimal integer that is too large, point,
+	 * exponent, hexadecimal float) is a float.
+	 */
 	boolean str2d(String str, SemInfo seminfo) {
-		if (str.indexOf('n')>=0 || str.indexOf('N')>=0)
-			seminfo.r = LuaConstant.ZERO;
-		else if (str.indexOf('x')>=0 || str.indexOf('X')>=0)
-			seminfo.r = strx2number(str, seminfo);
-		else {
-			try {
-				seminfo.r = LuaValue.valueOf(Double.parseDouble(str.trim()));
-			} catch (NumberFormatException e) {
-				lexerror("malformed number (" + e.getMessage() + ")", TK_NUMBER);
-			}
-		}
+		LuaNumber n = LuaString.valueOf(str).scannum();
+		if (n == null)
+			lexerror("malformed number", TK_NUMBER);
+		seminfo.r = n;
 		return true;
 	}
 
@@ -658,6 +607,15 @@ public class LexState extends Constants {
 				else {
 					nextChar();
 					return TK_NE;
+				}
+			}
+			case '/': {
+				nextChar();
+				if (current != '/')
+					return '/';
+				else {
+					nextChar();
+					return TK_IDIV;
 				}
 			}
 			case ':': {
@@ -1514,6 +1472,8 @@ public class LexState extends Constants {
 			return OPR_DIV;
 		case '%':
 			return OPR_MOD;
+		case TK_IDIV:
+			return OPR_IDIV;
 		case '^':
 			return OPR_POW;
 		case TK_CONCAT:
@@ -1551,7 +1511,7 @@ public class LexState extends Constants {
 	};
 	
 	static Priority[] priority = {  /* ORDER OPR */
-	   new Priority(6, 6), new Priority(6, 6), new Priority(7, 7), new Priority(7, 7), new Priority(7, 7),  /* `+' `-' `/' `%' */
+	   new Priority(6, 6), new Priority(6, 6), new Priority(7, 7), new Priority(7, 7), new Priority(7, 7), new Priority(7, 7),  /* `+' `-' `*' `/' `%' `//' */
 	   new Priority(10, 9), new Priority(5, 4),                 /* power and concat (right associative) */
 	   new Priority(3, 3), new Priority(3, 3),                  /* equality and inequality */
 	   new Priority(3, 3), new Priority(3, 3), new Priority(3, 3), new Priority(3, 3),  /* order */

@@ -219,7 +219,19 @@ public class LuaTable extends LuaValue implements Metatable {
 		return v.isnil() && m_metatable!=null? gettable(this,valueOf(key)): v;
 	}
 	
+	/** A float key with an exact integer value is the same key as that integer: t[1.0] is t[1]. */
+	private static LuaValue normkey(LuaValue key) {
+		if ( key instanceof LuaDouble ) {
+			double d = ((LuaDouble) key).v;
+			int i = (int) d;
+			if ( i == d )
+				return LuaInteger.valueOf(i);
+		}
+		return key;
+	}
+
 	public LuaValue get(LuaValue key ) {
+		key = normkey(key);
 		LuaValue v = rawget(key);
 		return v.isnil() && m_metatable!=null? gettable(this,key): v;
 	}
@@ -233,6 +245,7 @@ public class LuaTable extends LuaValue implements Metatable {
 	}
 
 	public LuaValue rawget(LuaValue key ) {
+		key = normkey(key);
 		if ( key.isinttype() ) {
 			int ikey = key.toint();
 			if ( ikey>0 && ikey<=array.length ) {
@@ -265,6 +278,7 @@ public class LuaTable extends LuaValue implements Metatable {
 	public void set(LuaValue key, LuaValue value ) {
 		if (key == null || !key.isvalidkey() && !metatag(LuaConstant.MetaTag.NEWINDEX).isfunction())
 			throw new LuaError("value ('" + key + "') can not be used as a table index");
+		key = normkey(key);
 		if ( m_metatable==null || ! rawget(key).isnil() ||  ! settable(this,key,value) )
 			rawset(key, value);
 	}
@@ -276,6 +290,7 @@ public class LuaTable extends LuaValue implements Metatable {
 
 	/** caller must ensure key is not nil */
 	public void rawset(LuaValue key, LuaValue value ) {
+		key = normkey(key);
 		if ( !key.isinttype() || !arrayset(key.toint(), value) )
 			hashset( key, value );
 	}
@@ -381,6 +396,7 @@ public class LuaTable extends LuaValue implements Metatable {
 	 * @return key,value or nil
 	 */
 	public Varargs next( LuaValue key ) {
+		key = normkey(key);
 		int i = 0;
 		do {
 			// find current key index
@@ -765,8 +781,6 @@ public class LuaTable extends LuaValue implements Metatable {
 	protected static Entry defaultEntry(LuaValue key, LuaValue value) {
 		if ( key.isinttype() ) {
 			return new IntKeyEntry( key.toint(), value );
-		} else if (value.getType() == LuaType.NUMBER) {
-			return new NumberValueEntry( key, value.todouble() );
 		} else {
 			return new NormalEntry( key, value );
 		}
@@ -1208,46 +1222,6 @@ public class LuaTable extends LuaValue implements Metatable {
 
 		public boolean keyeq(LuaValue key) {
 			return key.raweq( this.key );
-		}
-	}
-
-	/**
-	 * Entry class used with numeric values, but only when the key is not an integer.
-	 */
-	private static class NumberValueEntry extends Entry {
-		private double value;
-		private final LuaValue key;
-
-		NumberValueEntry(LuaValue key, double value) {
-			this.key = key;
-			this.value = value;
-		}
-
-		public LuaValue key() {
-			return key;
-		}
-
-		public LuaValue value() {
-			return valueOf(value);
-		}
-
-		public Entry set(LuaValue value) {
-			if (value.getType() == LuaType.NUMBER) {
-				LuaValue n = value.tonumber();
-				if (!n.isnil()) {
-					this.value = n.todouble();
-					return this;
-				}
-			}
-			return new NormalEntry( this.key, value );
-		}
-
-		public int keyindex( int mask ) {
-			return hashSlot( key, mask );
-		}
-
-		public boolean keyeq(LuaValue key) {
-			return key.raweq(this.key);
 		}
 	}
 

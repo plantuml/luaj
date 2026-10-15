@@ -103,15 +103,17 @@ class UnaryBinaryOperatorsTest {
     }
 
     @Test
-    void testDoublesBecomeInts() {
-        // DoubleValue.valueOf should return int
+    void testDoublesStayDoubles() {
+        // a float stays a float even if its value is integral, but it is equal to the integer
         LuaValue ia = LuaInteger.valueOf(345), da = LuaDouble.valueOf(345.0), db = LuaDouble.valueOf(345.5);
         LuaValue sa = LuaValue.valueOf("3.0"), sb = LuaValue.valueOf("3"), sc = LuaValue.valueOf("-2.0"),
             sd = LuaValue.valueOf("-2");
 
-        assertEquals(ia, da);
+        assertTrue(ia.raweq(da));
+        assertTrue(da.raweq(ia));
+        assertNotEquals(ia, da); // different subtypes are different table keys, until normalized by the table
         assertInstanceOf(LuaInteger.class, ia);
-        assertInstanceOf(LuaInteger.class, da);
+        assertInstanceOf(LuaDouble.class, da);
         assertInstanceOf(LuaDouble.class, db);
         assertEquals(ia.toint(), 345);
         assertEquals(da.toint(), 345);

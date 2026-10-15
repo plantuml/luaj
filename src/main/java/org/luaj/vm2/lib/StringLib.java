@@ -292,7 +292,8 @@ public class StringLib extends TwoArgFunction {
                                     case 'u':
                                     case 'x':
                                     case 'X':
-                                        fdsc.format(result, args.checklong(arg));
+                                        // 32 bit integers are shown as unsigned values
+                                        fdsc.format(result, args.checklong(arg) & 0xFFFFFFFFL);
                                         break;
                                     case 'e':
                                     case 'E':

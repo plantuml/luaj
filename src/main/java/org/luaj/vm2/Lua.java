@@ -30,7 +30,7 @@ package org.luaj.vm2;
  */
 public class Lua {
 	/** version is supplied by ant build task */
-	public static final String _VERSION = "Lua 5.2";
+	public static final String _VERSION = "Lua 5.3";
 	
 	/** use return values from previous op */
 	public static final int LUA_MULTRET = -1;
@@ -234,7 +234,10 @@ public class Lua {
 
 	public static final int OP_EXTRAARG = 39; /* Ax	extra (larger) argument for previous opcode	*/
 
-	public static final int NUM_OPCODES	= OP_EXTRAARG + 1;
+	/** floor division: R(A) := RK(B) // RK(C)  (added after the 5.2 opcodes, so the numbers of the others do not change) */
+	public static final int OP_IDIV = 40;
+
+	public static final int NUM_OPCODES	= OP_IDIV + 1;
 
 	/* pseudo-opcodes used in parsing only.  */
 	public static final int OP_GT  = 63; // >
@@ -320,6 +323,7 @@ public class Lua {
 		 (0<<7) | (1<<6) | (OpArgU<<4) | (OpArgN<<2) | (iABx),		/* OP_CLOSURE */
 		 (0<<7) | (1<<6) | (OpArgU<<4) | (OpArgN<<2) | (iABC),		/* OP_VARARG */
 		 (0<<7) | (0<<6) | (OpArgU<<4) | (OpArgU<<2) | (iAx),		/* OP_EXTRAARG */
+		 (0<<7) | (1<<6) | (OpArgK<<4) | (OpArgK<<2) | (iABC),		/* OP_IDIV */
 	  };
 
 	public static int getOpMode(int m) {

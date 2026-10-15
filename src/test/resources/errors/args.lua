@@ -171,6 +171,9 @@ function checkallpass( name, typesets, typesonly )
 			else
 				_print( ok, sig, values(r) )
 			end
+		elseif type(r[1]) == 'string' and _find(r[1], 'no integer representation', 1, true) then
+			-- integer arguments do not accept floats that have no integer value (like 1.25)
+			_print( ok, sig, '...no integer representation...' )
 		else
 			_print( fail, sig, values(r) )
 		end
@@ -188,6 +191,8 @@ function checkallerrors( name, typesets, template )
 		if not s then
 			if _find(e, template, 1, true) then
 				_print( ok, sig, '...'..template..'...' )
+			elseif _find(e, 'no integer representation', 1, true) then
+				_print( ok, sig, '...no integer representation...' )
 			else
 				_print( badmsg, sig, "template='"..template.."' actual='"..e.."'" )
 			end

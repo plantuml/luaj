@@ -488,12 +488,7 @@ public class FuncState extends Constants {
 	}
 
 	int numberK(LuaValue r) {
-		if ( r instanceof LuaDouble ) {
-			double d = r.todouble();
-			int i = (int) d;
-			if ( d == (double) i )
-				r = LuaInteger.valueOf(i);
-		}
+		// the constant keeps its subtype: 1 and 1.0 are two different constants
 		return this.addk(r);
 	}
 
@@ -865,7 +860,7 @@ public class FuncState extends Constants {
 		LuaValue v1, v2, r;
 		if (!e1.isnumeral() || !e2.isnumeral())
 			return false;
-		if ((op == OP_DIV || op == OP_MOD) && e2.u.nval().eq_b(LuaConstant.ZERO))
+		if ((op == OP_DIV || op == OP_MOD || op == OP_IDIV) && e2.u.nval().eq_b(LuaConstant.ZERO))
 			    return false;  /* do not attempt to divide by 0 */
 		v1 = e1.u.nval();
 		v2 = e2.u.nval();
@@ -888,6 +883,9 @@ public class FuncState extends Constants {
 		case OP_POW:
 			r = v1.pow(v2);
 			break;
+		case OP_IDIV:
+			r = v1.idiv(v2);
+			break;
 		case OP_UNM:
 			r = v1.neg();
 			break;
@@ -900,9 +898,18 @@ public class FuncState extends Constants {
 			r = null;
 			break;
 		}
-		if ( Double.isNaN(r.todouble()) )
-			return false; /* do not attempt to produce NaN */
+		if ( !foldable(r) )
+			return false; /* do not attempt to produce NaN or a float zero (it could be -0.0) */
 		e1.u.setNval( r );
+		return true;
+	}
+
+	/** A float constant can be NaN or a zero, but those are never folded: -0.0 and 0.0 must stay distinct. */
+	private static boolean foldable(LuaValue r) {
+		if ( r instanceof LuaDouble ) {
+			double d = r.todouble();
+			return d == d && d != 0;
+		}
 		return true;
 	}
 
@@ -947,7 +954,7 @@ public class FuncState extends Constants {
 		e2.init(LexState.VKNUM, 0);
 		switch (op) {
 		case LexState.OPR_MINUS: {
-			if (e.isnumeral())  /* minus constant? */
+			if (e.isnumeral() && foldable(e.u.nval().neg()))  /* minus constant? */
 				e.u.setNval(e.u.nval().neg());  /* fold it */
 		    else {
 		       this.exp2anyreg(e);
@@ -987,6 +994,7 @@ public class FuncState extends Constants {
 		case LexState.OPR_MUL:
 		case LexState.OPR_DIV:
 		case LexState.OPR_MOD:
+		case LexState.OPR_IDIV:
 		case LexState.OPR_POW: {
 			if (!v.isnumeral())
 				this.exp2RK(v);
@@ -1047,6 +1055,9 @@ public class FuncState extends Constants {
 			break;
 		case LexState.OPR_MOD:
 			this.codearith(OP_MOD, e1, e2, line);
+			break;
+		case LexState.OPR_IDIV:
+			this.codearith(OP_IDIV, e1, e2, line);
 			break;
 		case LexState.OPR_POW:
 			this.codearith(OP_POW, e1, e2, line);

@@ -287,6 +287,10 @@ public class LuaClosure extends LuaFunction {
 					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).mod((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
 					continue;
 					
+				case Lua.OP_IDIV: /*	A B C	R(A):= RK(B) // RK(C)				*/
+					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).idiv((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
+					continue;
+					
 				case Lua.OP_POW: /*	A B C	R(A):= RK(B) ^ RK(C)				*/
 					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).pow((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
 					continue;
@@ -409,28 +413,97 @@ public class LuaClosure extends LuaFunction {
 						return varargsOf(stack, a, b-1);
 					}
 					
-				case Lua.OP_FORLOOP: /*	A sBx	R(A)+=R(A+2): if R(A) <?= R(A+1) then { pc+=sBx: R(A+3)=R(A) }*/
+				case Lua.OP_FORLOOP: /*	A sBx	update the counter: if the loop goes on then { pc+=sBx: R(A+3)=R(A) }*/
 					{
-			            LuaValue limit = stack[a + 1];
-						LuaValue step  = stack[a + 2];
-						LuaValue idx   = stack[a].add(step);
-			            if (step.gt_b(0)? idx.lteq_b(limit): idx.gteq_b(limit)) {
-		                    stack[a] = idx;
-		                    stack[a + 3] = idx;
-		                    pc += (i>>>14)-0x1ffff;
-			            }
+						LuaValue step = stack[a + 2];
+						if (step instanceof LuaInteger) {
+							/* integer loop: R(A+1) is the number of iterations still to do (unsigned), so it can never overflow */
+							int count = ((LuaInteger) stack[a + 1]).v;
+							if (count != 0) {
+								stack[a + 1] = LuaInteger.valueOf(count - 1);
+								LuaInteger idx = LuaInteger.valueOf(((LuaInteger) stack[a]).v + ((LuaInteger) step).v);
+								stack[a] = idx;
+								stack[a + 3] = idx;
+								pc += (i>>>14)-0x1ffff;
+							}
+						} else {
+							/* float loop */
+							double st = step.todouble();
+							double idx = stack[a].todouble() + st;
+							double limit = stack[a + 1].todouble();
+							if (st > 0? idx <= limit: limit <= idx) {
+								LuaValue v1 = LuaDouble.valueOf(idx);
+								stack[a] = v1;
+								stack[a + 3] = v1;
+								pc += (i>>>14)-0x1ffff;
+							}
+						}
 					}
 					continue;
 					
-				case Lua.OP_FORPREP: /*	A sBx	R(A)-=R(A+2): pc+=sBx				*/
+				case Lua.OP_FORPREP: /*	A sBx	prepare the loop: enter the body, or if it does not run pc+=sBx+1 (after OP_FORLOOP)	*/
 					{
 						LuaValue init  = stack[a].checknumber("'for' initial value must be a number");
 						LuaValue limit = stack[a + 1].checknumber("'for' limit must be a number");
 						LuaValue step  = stack[a + 2].checknumber("'for' step must be a number");
-						stack[a] = init.sub(step);
-						stack[a + 1] = limit;
-						stack[a + 2] = step;
-						pc += (i>>>14)-0x1ffff;
+						boolean run;
+						if (init instanceof LuaInteger && step instanceof LuaInteger) {
+							int istart = ((LuaInteger) init).v;
+							int istep = ((LuaInteger) step).v;
+							if (istep == 0)
+								throw new LuaError("'for' step is zero");
+							int ilimit = 0;
+							run = true;
+							if (limit instanceof LuaInteger) {
+								ilimit = ((LuaInteger) limit).v;
+							} else {
+								/* the limit is a float: round it towards the inside of the loop and clip it to an int */
+								double dl = limit.todouble();
+								if (dl != dl) {
+									run = false; /* NaN */
+								} else {
+									dl = istep > 0? Math.floor(dl): Math.ceil(dl);
+									if (dl >= 2147483648.0) {
+										if (istep < 0) run = false; /* start is below the limit */
+										ilimit = Integer.MAX_VALUE;
+									} else if (dl < -2147483648.0) {
+										if (istep > 0) run = false;
+										ilimit = Integer.MIN_VALUE;
+									} else {
+										ilimit = (int) dl;
+									}
+								}
+							}
+							if (run && (istep > 0? istart > ilimit: istart < ilimit))
+								run = false;
+							if (run) {
+								/* number of iterations after the first one, computed with unsigned arithmetic */
+								int count = istep > 0?
+									Integer.divideUnsigned(ilimit - istart, istep):
+									Integer.divideUnsigned(istart - ilimit, -(istep + 1) + 1);
+								stack[a] = init;
+								stack[a + 1] = LuaInteger.valueOf(count);
+								stack[a + 2] = step;
+								stack[a + 3] = init;
+							}
+						} else {
+							/* float loop */
+							double dinit = init.todouble();
+							double dlimit = limit.todouble();
+							double dstep = step.todouble();
+							if (dstep == 0)
+								throw new LuaError("'for' step is zero");
+							run = dstep > 0? dinit <= dlimit: dlimit <= dinit;
+							if (run) {
+								LuaValue v1 = LuaDouble.valueOf(dinit);
+								stack[a] = v1;
+								stack[a + 1] = LuaDouble.valueOf(dlimit);
+								stack[a + 2] = LuaDouble.valueOf(dstep);
+								stack[a + 3] = v1;
+							}
+						}
+						if (!run)
+							pc += (i>>>14)-0x1ffff+1;
 					}
 					continue;
 

@@ -7,11 +7,11 @@
 --- checkallpass
 -		table.concat(<table>,'-',2)	'7-6-5-4-3-2-1'
 -		table.concat(<table>,'-','2')	'7-6-5-4-3-2-1'
--		table.concat(<table>,'-','2.2')	'7-6-5-4-3-2-1'
+-		table.concat(<table>,'-','2.2')	...no integer representation...
 --- checkallpass
 -		table.concat(<table>,'-',2,4)	'7-6-5'
 -		table.concat(<table>,'-',2,'4')	'7-6-5'
--		table.concat(<table>,'-',2,'4.4')	'7-6-5'
+-		table.concat(<table>,'-',2,'4.4')	...no integer representation...
 --- checkallerrors
 -		table.concat(nil)	...bad argument...
 -		table.concat('abc')	...bad argument...
@@ -44,19 +44,19 @@
 --- checkallpass
 -		table.insert(<table>,2,'abc')	
 -		table.insert(<table>,'2','abc')	
--		table.insert(<table>,'2.2','abc')	
+-		table.insert(<table>,'2.2','abc')	...no integer representation...
 -		table.insert(<table>,2,1.25)	
 -		table.insert(<table>,'2',1.25)	
--		table.insert(<table>,'2.2',1.25)	
+-		table.insert(<table>,'2.2',1.25)	...no integer representation...
 -		table.insert(<table>,2,true)	
 -		table.insert(<table>,'2',true)	
--		table.insert(<table>,'2.2',true)	
+-		table.insert(<table>,'2.2',true)	...no integer representation...
 -		table.insert(<table>,2,<table>)	
 -		table.insert(<table>,'2',<table>)	
--		table.insert(<table>,'2.2',<table>)	
+-		table.insert(<table>,'2.2',<table>)	...no integer representation...
 -		table.insert(<table>,2,<function>)	
 -		table.insert(<table>,'2',<function>)	
--		table.insert(<table>,'2.2',<function>)	
+-		table.insert(<table>,'2.2',<function>)	...no integer representation...
 --- checkallerrors
 -		table.insert(nil,'abc')	...bad argument...
 -		table.insert('abc','abc')	...bad argument...
@@ -95,7 +95,7 @@
 --- checkallpass
 -		table.remove(<table>,2)	<function>
 -		table.remove(<table>,'2')	<function>
--		table.remove(<table>,'2.2')	<function>
+-		table.remove(<table>,'2.2')	...no integer representation...
 --- checkallerrors
 -		table.remove(nil)	...bad argument...
 -		table.remove('abc')	...bad argument...
@@ -194,15 +194,15 @@
 -		table_set_nil_key(<table>,<function>)	...table index...
 ====== table.unpack ======
 --- checkallpass
--		table.unpack(<table>)	'abc',<table>,<table>,<table>,true,true,true,1.25,1.25,1.25,'abc','abc','abc',1.25,true,<table>
+-		table.unpack(<table>)	'abc',<table>,<table>,true,true,1.25,1.25,'abc','abc',1.25,true,<table>
 --- checkallpass
--		table.unpack(<table>,3)	<table>,<table>,true,true,true,1.25,1.25,1.25,'abc','abc','abc',1.25,true,<table>
--		table.unpack(<table>,'5')	true,true,true,1.25,1.25,1.25,'abc','abc','abc',1.25,true,<table>
+-		table.unpack(<table>,3)	<table>,true,true,1.25,1.25,'abc','abc',1.25,true,<table>
+-		table.unpack(<table>,'5')	true,1.25,1.25,'abc','abc',1.25,true,<table>
 --- checkallpass
--		table.unpack(<table>,3,1.25)	
--		table.unpack(<table>,'5',1.25)	
--		table.unpack(<table>,3,'7')	<table>,<table>,true,true,true
--		table.unpack(<table>,'5','7')	true,true,true
+-		table.unpack(<table>,3,1.25)	...no integer representation...
+-		table.unpack(<table>,'5',1.25)	...no integer representation...
+-		table.unpack(<table>,3,'7')	<table>,true,true,1.25,1.25
+-		table.unpack(<table>,'5','7')	true,1.25,1.25
 --- checkallerrors
 -		table.unpack(nil,1.25,1.25)	...bad argument...
 -		table.unpack('abc',1.25,1.25)	...bad argument...

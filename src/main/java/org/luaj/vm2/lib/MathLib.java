@@ -24,6 +24,8 @@ package org.luaj.vm2.lib;
 import java.util.Random;
 
 import org.luaj.vm2.LuaDouble;
+import org.luaj.vm2.LuaInteger;
+import org.luaj.vm2.LuaNumber;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
@@ -70,6 +72,8 @@ public class MathLib extends TwoArgFunction {
 		math.set("fmod", new fmod());
 		math.set("frexp", new frexp());
 		math.set("huge", LuaDouble.POSINF );
+		math.set("maxinteger", LuaInteger.valueOf(Integer.MAX_VALUE) );
+		math.set("mininteger", LuaInteger.valueOf(Integer.MIN_VALUE) );
 		math.set("ldexp", new ldexp());
 		math.set("max", new max());
 		math.set("min", new min());
@@ -91,6 +95,9 @@ public class MathLib extends TwoArgFunction {
 		math.set("sin", new sin());
 		math.set("sqrt", new sqrt());
 		math.set("tan", new tan());
+		math.set("type", new type());
+		math.set("tointeger", new tointeger());
+		math.set("ult", new ult());
 		env.set("math", math);
 		if (!env.get("package").isnil())
 			env.get("package").get("loaded").set("math", math);
@@ -114,14 +121,26 @@ public class MathLib extends TwoArgFunction {
 		abstract protected double call(double x, double y);
 	}
 
-	static final class abs extends UnaryOp {
+	static final class abs extends OneArgFunction {
 		@Override
-		protected double call(double d) { return Math.abs(d); }
+		public LuaValue call(LuaValue arg) {
+			LuaNumber n = arg.checknumber();
+			return n instanceof LuaInteger? LuaInteger.valueOf(Math.abs(((LuaInteger) n).v)): valueOf(Math.abs(n.todouble()));
+		}
 	}
 
-	static final class ceil extends UnaryOp {
+	/** An integral float as an integer if it fits in 32 bits, else the float itself (like lua_Number2Integer). */
+	static LuaValue floatToInteger(double d) {
+		int i = (int) d;
+		return i == d? (LuaValue) LuaInteger.valueOf(i): (LuaValue) valueOf(d);
+	}
+
+	static final class ceil extends OneArgFunction {
 		@Override
-		protected double call(double d) { return Math.ceil(d); }
+		public LuaValue call(LuaValue arg) {
+			LuaNumber n = arg.checknumber();
+			return n instanceof LuaInteger? n: floatToInteger(Math.ceil(n.todouble()));
+		}
 	}
 
 	static final class cos extends UnaryOp {
@@ -134,9 +153,12 @@ public class MathLib extends TwoArgFunction {
 		protected double call(double d) {return Math.toDegrees(d); }
 	}
 
-	static final class floor extends UnaryOp {
+	static final class floor extends OneArgFunction {
 		@Override
-		protected double call(double d) {return Math.floor(d); }
+		public LuaValue call(LuaValue arg) {
+			LuaNumber n = arg.checknumber();
+			return n instanceof LuaInteger? n: floatToInteger(Math.floor(n.todouble()));
+		}
 	}
 
 	static final class rad extends UnaryOp {
@@ -217,12 +239,15 @@ public class MathLib extends TwoArgFunction {
 	static final class fmod extends TwoArgFunction {
 		@Override
 		public LuaValue call(LuaValue xv, LuaValue yv) {
-			if (yv.checkdouble() == 0.0d)
-				return LuaDouble.NAN;
-			if (xv.islong() && yv.islong()) {
-				return valueOf(xv.tolong() % yv.tolong());
+			LuaNumber x = xv.checknumber();
+			LuaNumber y = yv.checknumber();
+			if (x instanceof LuaInteger && y instanceof LuaInteger) {
+				int b = ((LuaInteger) y).v;
+				if (b == 0)
+					argumentError(2, "zero");
+				return LuaInteger.valueOf(b == -1? 0: ((LuaInteger) x).v % b);
 			}
-			return valueOf(xv.checkdouble() % yv.checkdouble());
+			return valueOf(x.todouble() % y.todouble());
 		}
 	}
 
@@ -246,11 +271,11 @@ public class MathLib extends TwoArgFunction {
 		public Varargs invoke(Varargs args) {
 			double x = args.arg(1).checkdouble();
 			if (x == 0)
-				return varargsOf(LuaConstant.ZERO, LuaConstant.ZERO);
+				return varargsOf(valueOf(0.0), LuaConstant.ZERO);
 			long bits = Double.doubleToLongBits(x);
 			double m = ((bits & ~(-1L<<52))+(1L<<52))*(bits >= 0? .5/(1L<<52): -.5/(1L<<52));
 			double e = ((int) (bits>>52) & 0x7ff)-1022;
-			return varargsOf(valueOf(m), valueOf(e));
+			return varargsOf(valueOf(m), LuaInteger.valueOf((int) e));
 		}
 	}
 
@@ -284,9 +309,9 @@ public class MathLib extends TwoArgFunction {
 		@Override
 		public Varargs invoke(Varargs args) {
 			LuaValue n = args.arg(1);
-			/* number is its own integer part, no fractional part */
-			if (n.islong())
-				return varargsOf(n.tonumber(), valueOf(0.0));
+			/* an integer is its own integer part, no fractional part */
+			if (n instanceof LuaInteger)
+				return varargsOf(n, valueOf(0.0));
 			double x = n.checkdouble();
 			/* integer part (rounds toward zero) */
 			double intPart = x > 0? Math.floor(x): Math.ceil(x);
@@ -318,7 +343,10 @@ public class MathLib extends TwoArgFunction {
 			int n = b.checkint();
 			if (n < m)
 				argumentError(2, "interval is empty");
-			return valueOf(m+random.nextInt(n+1-m));
+			long range = (long) n - m + 1;
+			if (range <= Integer.MAX_VALUE)
+				return valueOf(m+random.nextInt((int) range));
+			return valueOf((int) (m + (long) (random.nextDouble() * range)));
 		}
 
 	}
@@ -332,9 +360,34 @@ public class MathLib extends TwoArgFunction {
 
 		@Override
 		public LuaValue call(LuaValue arg) {
-			long seed = arg.checklong();
+			long seed = arg.checknumber().tolong();
 			random.random = new Random(seed);
 			return LuaConstant.NONE;
+		}
+	}
+
+	/** math.type(x): "integer", "float", or nil if x is not a number */
+	static final class type extends OneArgFunction {
+		@Override
+		public LuaValue call(LuaValue arg) {
+			arg.checknotnil();
+			return arg instanceof LuaInteger? valueOf("integer"): arg instanceof LuaDouble? valueOf("float"): LuaConstant.NIL;
+		}
+	}
+
+	/** math.tointeger(x): x as an integer if it has an exact integer value, else nil */
+	static final class tointeger extends OneArgFunction {
+		@Override
+		public LuaValue call(LuaValue arg) {
+			return arg.isint()? (LuaValue) LuaInteger.valueOf(arg.toint()): LuaConstant.NIL;
+		}
+	}
+
+	/** math.ult(m, n): true if the integer m is below n when both are compared as unsigned */
+	static final class ult extends TwoArgFunction {
+		@Override
+		public LuaValue call(LuaValue m, LuaValue n) {
+			return valueOf(Integer.compareUnsigned(m.checkint(), n.checkint()) < 0);
 		}
 	}
 

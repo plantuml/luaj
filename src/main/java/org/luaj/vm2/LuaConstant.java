@@ -72,6 +72,9 @@ public class LuaConstant {
         /** LuaString constant with value "__sub" for use as metatag */
         public static final LuaString SUB = LuaValue.valueOf("__sub");
 
+        /** LuaString constant with value "__idiv" for use as metatag */
+        public static final LuaString IDIV = LuaValue.valueOf("__idiv");
+
         /** LuaString constant with value "__div" for use as metatag */
         public static final LuaString DIV = LuaValue.valueOf("__div");
 

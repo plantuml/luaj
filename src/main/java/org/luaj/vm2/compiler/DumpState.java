@@ -163,8 +163,13 @@ public class DumpState {
 				case NUMBER:
 					switch (NUMBER_FORMAT) {
 						case NUMBER_FORMAT_FLOATS_OR_DOUBLES:
-							writer.write(luaType.ec);
-							dumpDouble(o.todouble());
+							if ( o instanceof LuaInteger ) {
+								writer.write(LoadState.LUA_TINT); // integer constant: 4 bytes
+								dumpInt(o.toint());
+							} else {
+								writer.write(luaType.ec);
+								dumpDouble(o.todouble());
+							}
 							break;
 						case NUMBER_FORMAT_INTS_ONLY:
 							if ( ! ALLOW_INTEGER_CASTING && ! o.isint() )

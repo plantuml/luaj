@@ -2681,7 +2681,7 @@ public abstract class LuaValue extends Varargs {
      * @see #add(LuaValue)
      */
     public LuaValue add(int rhs) {
-        return add((double) rhs);
+        return arithmtwith(LuaConstant.MetaTag.ADD, rhs);
     }
 
     /**
@@ -2774,7 +2774,7 @@ public abstract class LuaValue extends Varargs {
      * @see #sub(int)
      */
     public LuaValue subFrom(int lhs) {
-        return subFrom((double) lhs);
+        return arithmtwith(LuaConstant.MetaTag.SUB, lhs);
     }
 
     /**
@@ -2827,7 +2827,7 @@ public abstract class LuaValue extends Varargs {
      * @see #mul(LuaValue)
      */
     public LuaValue mul(int rhs) {
-        return mul((double) rhs);
+        return arithmtwith(LuaConstant.MetaTag.MUL, rhs);
     }
 
     /**
@@ -2917,7 +2917,7 @@ public abstract class LuaValue extends Varargs {
      * @see #pow(int)
      */
     public LuaValue powWith(int lhs) {
-        return powWith((double) lhs);
+        return arithmtwith(LuaConstant.MetaTag.POW, lhs);
     }
 
     /**
@@ -3073,6 +3073,63 @@ public abstract class LuaValue extends Varargs {
     }
 
     /**
+     * Reverse-divide: {@code (lhs / this)} where lhs is an int, with metatag processing
+     *
+     * @param lhs The left-hand-side value which is divided by {@code this}
+     * @return value of {@code (lhs / this)} if this is numeric
+     * @see #div(LuaValue)
+     */
+    public LuaValue divInto(int lhs) {
+        return arithmtwith(LuaConstant.MetaTag.DIV, lhs);
+    }
+
+    /**
+     * Reverse-modulo: {@code (lhs % this)} where lhs is an int, with metatag processing
+     *
+     * @param lhs The left-hand-side value which is divided by {@code this}
+     * @return value of {@code (lhs % this)} if this is numeric
+     * @see #mod(LuaValue)
+     */
+    public LuaValue modFrom(int lhs) {
+        return arithmtwith(LuaConstant.MetaTag.MOD, lhs);
+    }
+
+    /**
+     * Floor division {@code (this // rhs)} of unknown type, including metatag processing.
+     * An int divided by an int gives an int, anything else gives a float.
+     *
+     * @param rhs The right-hand-side value
+     * @return value of {@code (this // rhs)} if both are numeric, or
+     * {@link LuaValue} if metatag processing occurs
+     * @throws LuaError if either operand is not a number or string convertible
+     *                  to number, and neither has the {@link LuaConstant.MetaTag#IDIV} metatag
+     *                  defined, or if both are ints and rhs is zero
+     */
+    public LuaValue idiv(LuaValue rhs) {
+        return arithmt(LuaConstant.MetaTag.IDIV, rhs);
+    }
+
+    /** Floor division {@code (this // rhs)} where rhs is a double. */
+    public LuaValue idiv(double rhs) {
+        return arithmeticError("idiv");
+    }
+
+    /** Floor division {@code (this // rhs)} where rhs is an int. */
+    public LuaValue idiv(int rhs) {
+        return arithmeticError("idiv");
+    }
+
+    /** Reverse floor division {@code (lhs // this)} where lhs is a double. */
+    public LuaValue idivFrom(double lhs) {
+        return arithmtwith(LuaConstant.MetaTag.IDIV, lhs);
+    }
+
+    /** Reverse floor division {@code (lhs // this)} where lhs is an int. */
+    public LuaValue idivFrom(int lhs) {
+        return arithmtwith(LuaConstant.MetaTag.IDIV, lhs);
+    }
+
+    /**
      * Perform metatag processing for arithmetic operations.
      * <p>
      * Finds the supplied metatag value for {@code this} or {@code op2} and
@@ -3134,6 +3191,21 @@ public abstract class LuaValue extends Varargs {
         if (h.isnil())
             error("attempt to perform arithmetic " + tag + " on number and " + getType().typeName);
         return h.call(LuaValue.valueOf(op1), this);
+    }
+
+    /**
+     * Same as {@link #arithmtwith(LuaValue, double)} when the left-hand-side
+     * is an integer: the metamethod receives a lua integer.
+     *
+     * @param tag The metatag to look up
+     * @param op1 The value of the left-hand-side to perform the operation with
+     * @return {@link LuaValue} resulting from metatag processing
+     */
+    protected LuaValue arithmtwith(LuaValue tag, int op1) {
+        LuaValue h = metatag(tag);
+        if (h.isnil())
+            error("attempt to perform arithmetic " + tag + " on number and " + getType().typeName);
+        return h.call(LuaInteger.valueOf(op1), this);
     }
 
     /**
@@ -3858,13 +3930,13 @@ public abstract class LuaValue extends Varargs {
     }
 
     /**
-     * Convert java double to a {@link LuaValue}. This may return a
-     * {@link LuaInteger} or {@link LuaDouble} depending on the value supplied.
+     * Convert java double to a {@link LuaValue}. The result is always a
+     * float ({@link LuaDouble}), even when the value is integral.
      *
      * @param d double value to convert
-     * @return {@link LuaNumber} instance, possibly pooled, whose value is d
+     * @return {@link LuaDouble} instance whose value is d
      */
-    public static LuaNumber valueOf(double d) {
+    public static LuaDouble valueOf(double d) {
         return LuaDouble.valueOf(d);
     }
 

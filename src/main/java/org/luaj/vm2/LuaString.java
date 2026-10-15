@@ -258,33 +258,40 @@ public class LuaString extends LuaValue {
 		return decodeAsUtf8(m_bytes, m_offset, m_length);
 	}
 
-	// unary operators
-	public LuaValue neg() { double d = scannumber(); return Double.isNaN(d)? super.neg(): valueOf(-d); }
+	// arithmetic: a string that looks like a number is converted (10 is an int, 10.0 a float), then the number does the work
+	public LuaValue neg() { LuaNumber n = scannum(); return n == null? super.neg(): n.neg(); }
 
-	// basic binary arithmetic
-	public LuaValue add(LuaValue rhs )      { double d = scannumber(); return Double.isNaN(d)? arithmt(LuaConstant.MetaTag.ADD,rhs): rhs.add(d); }
-	public LuaValue add(double rhs )        { return valueOf( checkarith() + rhs ); }
-	public LuaValue add(int rhs )           { return valueOf( checkarith() + rhs ); }
-	public LuaValue sub(LuaValue rhs )      { double d = scannumber(); return Double.isNaN(d)? arithmt(LuaConstant.MetaTag.SUB,rhs): rhs.subFrom(d); }
-	public LuaValue sub(double rhs )        { return valueOf( checkarith() - rhs ); }
-	public LuaValue sub(int rhs )           { return valueOf( checkarith() - rhs ); }
-	public LuaValue subFrom(double lhs )    { return valueOf( lhs - checkarith() ); }
-	public LuaValue mul(LuaValue rhs )      { double d = scannumber(); return Double.isNaN(d)? arithmt(LuaConstant.MetaTag.MUL,rhs): rhs.mul(d); }
-	public LuaValue mul(double rhs )        { return valueOf( checkarith() * rhs ); }
-	public LuaValue mul(int rhs )           { return valueOf( checkarith() * rhs ); }
-	public LuaValue pow(LuaValue rhs )      { double d = scannumber(); return Double.isNaN(d)? arithmt(LuaConstant.MetaTag.POW,rhs): rhs.powWith(d); }
-	public LuaValue pow(double rhs )        { return MathLib.dpow(checkarith(),rhs); }
-	public LuaValue pow(int rhs )           { return MathLib.dpow(checkarith(),rhs); }
-	public LuaValue powWith(double lhs )    { return MathLib.dpow(lhs, checkarith()); }
-	public LuaValue powWith(int lhs )       { return MathLib.dpow(lhs, checkarith()); }
-	public LuaValue div(LuaValue rhs )      { double d = scannumber(); return Double.isNaN(d)? arithmt(LuaConstant.MetaTag.DIV,rhs): rhs.divInto(d); }
-	public LuaValue div(double rhs )        { return LuaDouble.ddiv(checkarith(),rhs); }
-	public LuaValue div(int rhs )           { return LuaDouble.ddiv(checkarith(),rhs); }
-	public LuaValue divInto(double lhs )    { return LuaDouble.ddiv(lhs, checkarith()); }
-	public LuaValue mod(LuaValue rhs )      { double d = scannumber(); return Double.isNaN(d)? arithmt(LuaConstant.MetaTag.MOD,rhs): rhs.modFrom(d); }
-	public LuaValue mod(double rhs )        { return LuaDouble.dmod(checkarith(), rhs); }
-	public LuaValue mod(int rhs )           { return LuaDouble.dmod(checkarith(), rhs); }
-	public LuaValue modFrom(double lhs )    { return LuaDouble.dmod(lhs, checkarith()); }
+	public LuaValue add(LuaValue rhs )      { LuaNumber n = scannum(); return n == null? arithmt(LuaConstant.MetaTag.ADD,rhs): n.add(rhs); }
+	public LuaValue add(double rhs )        { return checkarith().add(rhs); }
+	public LuaValue add(int rhs )           { return checkarith().add(rhs); }
+	public LuaValue sub(LuaValue rhs )      { LuaNumber n = scannum(); return n == null? arithmt(LuaConstant.MetaTag.SUB,rhs): n.sub(rhs); }
+	public LuaValue sub(double rhs )        { return checkarith().sub(rhs); }
+	public LuaValue sub(int rhs )           { return checkarith().sub(rhs); }
+	public LuaValue subFrom(double lhs )    { return checkarith().subFrom(lhs); }
+	public LuaValue subFrom(int lhs )       { return checkarith().subFrom(lhs); }
+	public LuaValue mul(LuaValue rhs )      { LuaNumber n = scannum(); return n == null? arithmt(LuaConstant.MetaTag.MUL,rhs): n.mul(rhs); }
+	public LuaValue mul(double rhs )        { return checkarith().mul(rhs); }
+	public LuaValue mul(int rhs )           { return checkarith().mul(rhs); }
+	public LuaValue pow(LuaValue rhs )      { LuaNumber n = scannum(); return n == null? arithmt(LuaConstant.MetaTag.POW,rhs): n.pow(rhs); }
+	public LuaValue pow(double rhs )        { return checkarith().pow(rhs); }
+	public LuaValue pow(int rhs )           { return checkarith().pow(rhs); }
+	public LuaValue powWith(double lhs )    { return checkarith().powWith(lhs); }
+	public LuaValue powWith(int lhs )       { return checkarith().powWith(lhs); }
+	public LuaValue div(LuaValue rhs )      { LuaNumber n = scannum(); return n == null? arithmt(LuaConstant.MetaTag.DIV,rhs): n.div(rhs); }
+	public LuaValue div(double rhs )        { return checkarith().div(rhs); }
+	public LuaValue div(int rhs )           { return checkarith().div(rhs); }
+	public LuaValue divInto(double lhs )    { return checkarith().divInto(lhs); }
+	public LuaValue divInto(int lhs )       { return checkarith().divInto(lhs); }
+	public LuaValue mod(LuaValue rhs )      { LuaNumber n = scannum(); return n == null? arithmt(LuaConstant.MetaTag.MOD,rhs): n.mod(rhs); }
+	public LuaValue mod(double rhs )        { return checkarith().mod(rhs); }
+	public LuaValue mod(int rhs )           { return checkarith().mod(rhs); }
+	public LuaValue modFrom(double lhs )    { return checkarith().modFrom(lhs); }
+	public LuaValue modFrom(int lhs )       { return checkarith().modFrom(lhs); }
+	public LuaValue idiv(LuaValue rhs )     { LuaNumber n = scannum(); return n == null? arithmt(LuaConstant.MetaTag.IDIV,rhs): n.idiv(rhs); }
+	public LuaValue idiv(double rhs )       { return checkarith().idiv(rhs); }
+	public LuaValue idiv(int rhs )          { return checkarith().idiv(rhs); }
+	public LuaValue idivFrom(double lhs )   { return checkarith().idivFrom(lhs); }
+	public LuaValue idivFrom(int lhs )      { return checkarith().idivFrom(lhs); }
 	
 	// relational operators, these only work with other strings
 	public LuaValue lt(LuaValue rhs )         { return rhs.isstring() ? (rhs.strcmp(this)>0? LuaConstant.TRUE : LuaConstant.FALSE) : super.lt(rhs); }
@@ -327,65 +334,57 @@ public class LuaString extends LuaValue {
 	}
 	
 	/** Check for number in arithmetic, or throw aritherror */
-	private double checkarith() {
-		double d = scannumber();
-		if ( Double.isNaN(d) )
+	private LuaNumber checkarith() {
+		LuaNumber n = scannum();
+		if ( n == null )
 			arithmeticError();
-		return d;
+		return n;
 	}
 	
 	public int checkint() {
-		return (int) (long) checkdouble();
+		return checknumber().checkint();
 	}
 	public LuaInteger checkinteger() {
-		return valueOf(checkint());
+		return checknumber().checkinteger();
 	}
 	public long checklong() {
-		return (long) checkdouble();
+		return checknumber().checklong();
 	}
 	public double checkdouble() {
-		double d = scannumber();
-		if ( Double.isNaN(d) )
-			argumentError("number");
-		return d;
+		return checknumber().checkdouble();
 	}
 	public LuaNumber checknumber() {
-		return valueOf(checkdouble());
+		LuaNumber n = scannum();
+		if ( n == null )
+			argumentError("number");
+		return n;
 	}
 	public LuaNumber checknumber(String msg) {
-		double d = scannumber();
-		if ( Double.isNaN(d) )
+		LuaNumber n = scannum();
+		if ( n == null )
 			error(msg);
-		return valueOf(d);
+		return n;
 	}
 
 	public boolean isnumber() {
-		double d = scannumber();
-		return ! Double.isNaN(d);
+		return scannum() != null;
 	}
 	
 	public boolean isint() {
-		double d = scannumber();
-		if ( Double.isNaN(d) )
-			return false;
-		int i = (int) d;
-		return i == d;
+		LuaNumber n = scannum();
+		return n != null && n.isint();
 	}
 
 	public boolean islong() {
-		double d = scannumber();
-		if ( Double.isNaN(d) )
-			return false;
-		long l = (long) d;
-		return l == d;
+		return isint();
 	}
 	
 	public byte    tobyte()        { return (byte) toint(); }
 	public char    tochar()        { return (char) toint(); }
-	public double  todouble()      { double d=scannumber(); return Double.isNaN(d)? 0: d; }
+	public double  todouble()      { LuaNumber n=scannum(); return n == null? 0: n.todouble(); }
 	public float   tofloat()       { return (float) todouble(); }
-	public int     toint()         { return (int) tolong(); }
-	public long    tolong()        { return (long) todouble(); }
+	public int     toint()         { LuaNumber n=scannum(); return n == null? 0: n.toint(); }
+	public long    tolong()        { LuaNumber n=scannum(); return n == null? 0: n.tolong(); }
 	public short   toshort()       { return (short) toint(); }
 
 	public double optdouble(double defval) {
@@ -732,24 +731,113 @@ public class LuaString extends LuaValue {
 	 * @see LuaValue#tonumber()
 	 */
 	public LuaValue tonumber() {
-		double d = scannumber();
-		return Double.isNaN(d)? LuaConstant.NIL: valueOf(d);
+		LuaNumber n = scannum();
+		return n == null? LuaConstant.NIL: n;
 	}
 	
 	/**
-	 * convert to a number using a supplied base, or NIL if it can't be converted
+	 * convert to a number using a supplied base, or NIL if it can't be converted.
+	 * The result is an integer: digits beyond 32 bits wrap around.
 	 * @param base the base to use, such as 10
-	 * @return IntValue, DoubleValue, or NIL depending on the content of the string.
+	 * @return LuaInteger, or NIL if the string is not a number in this base.
 	 * @see LuaValue#tonumber()
 	 */
 	public LuaValue tonumber(int base ) {
-		double d = scannumber( base );
-		return Double.isNaN(d)? LuaConstant.NIL: valueOf(d);
+		LuaNumber n = scannum( base );
+		return n == null? LuaConstant.NIL: n;
 	}
 	
 	/** Same set of white space characters as the C function isspace in the "C" locale. */
 	private static boolean isspace(byte b) {
 		return b==' ' || (b>=9 && b<=13);
+	}
+
+	/**
+	 * Convert to a number in base 10, or base 16 if the string starts with '0x'
+	 * (after an optional sign), or return null if it cannot be converted.
+	 * A decimal integer that fits in 32 bits is a {@link LuaInteger}, any other
+	 * decimal number is a {@link LuaDouble}. A hexadecimal integer is a
+	 * {@link LuaInteger} that wraps around modulo 2^32, a hexadecimal number with
+	 * a point or an exponent is a {@link LuaDouble}.
+	 * Leading and trailing white space is ignored.
+	 * @return LuaInteger or LuaDouble, or null if the text is not a number
+	 */
+	public LuaNumber scannum() {
+		int i=m_offset,j=m_offset+m_length;
+		while ( i<j && isspace(m_bytes[i]) ) ++i;
+		while ( i<j && isspace(m_bytes[j-1]) ) --j;
+		if ( i>=j )
+			return null;
+		int k = i;
+		boolean neg = m_bytes[k]=='-';
+		if ( neg || m_bytes[k]=='+' )
+			++k;
+		if ( k+1<j && m_bytes[k]=='0' && (m_bytes[k+1]=='x'||m_bytes[k+1]=='X') ) {
+			long hi = scanhexint(k+2, j);
+			if ( hi >= 0 ) {
+				int v = (int) hi;
+				return LuaInteger.valueOf(neg? -v: v);
+			}
+			double h = scanhex(k+2, j);
+			return Double.isNaN(h)? null: LuaDouble.valueOf(neg? -h: h);
+		}
+		double l = scanlong(10, i, j);
+		if ( !Double.isNaN(l) ) {
+			int v = (int) l;
+			return v == l? (LuaNumber) LuaInteger.valueOf(v): (LuaNumber) LuaDouble.valueOf(l);
+		}
+		double d = scandouble(i, j);
+		return Double.isNaN(d)? null: LuaDouble.valueOf(d);
+	}
+
+	/**
+	 * Convert to an integer in a base between 2 and 36 (optional sign, at least
+	 * one digit, no other character). Digits beyond 32 bits wrap around.
+	 * @param base the base to use
+	 * @return LuaInteger, or null if the text is not a number in this base
+	 */
+	public LuaNumber scannum(int base) {
+		if ( base < 2 || base > 36 )
+			return null;
+		int i=m_offset,j=m_offset+m_length;
+		while ( i<j && isspace(m_bytes[i]) ) ++i;
+		while ( i<j && isspace(m_bytes[j-1]) ) --j;
+		boolean neg = i<j && m_bytes[i] == '-';
+		if ( i<j && (neg || m_bytes[i] == '+') )
+			++i;
+		if ( i >= j )
+			return null;
+		int x = 0;
+		for ( ; i<j; i++ ) {
+			int digit = digitOf(m_bytes[i], base);
+			if ( digit < 0 )
+				return null;
+			x = x * base + digit;
+		}
+		return LuaInteger.valueOf(neg? -x: x);
+	}
+
+	/** value of a digit in a base, or -1 if the character is not a digit of this base */
+	private static int digitOf(byte c, int base) {
+		int digit = c>='0'&&c<='9'? c-'0': c>='a'&&c<='z'? c-'a'+10: c>='A'&&c<='Z'? c-'A'+10: -1;
+		return digit >= base? -1: digit;
+	}
+
+	/**
+	 * Scan the hexadecimal digits of an integer (what follows 0x), the value wraps around modulo 2^32.
+	 * @return the value as a non negative long, or -1 if there is no digit or something else than digits
+	 */
+	private long scanhexint( int start, int end ) {
+		if ( start >= end )
+			return -1;
+		long x = 0;
+		for ( int i=start; i<end; i++ ) {
+			int d = digitOf(m_bytes[i], 16);
+			if ( d < 0 )
+				return -1;
+			x = ((x << 4) | d) & 0xFFFFFFFFL;
+		}
+		return x;
 	}
 
 	/**
@@ -809,8 +897,7 @@ public class LuaString extends LuaValue {
 		if ( first >= end )
 			return Double.NaN; // no digit at all
 		for ( int i=first; i<end; i++ ) {
-			int digit = m_bytes[i] - (base<=10||(m_bytes[i]>='0'&&m_bytes[i]<='9')? '0':
-					m_bytes[i]>='A'&&m_bytes[i]<='Z'? ('A'-10): ('a'-10));
+			int digit = digitOf(m_bytes[i], base);
 			if ( digit < 0 || digit >= base )
 				return Double.NaN;
 			if ( x > (Long.MAX_VALUE - digit) / base )

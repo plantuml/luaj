@@ -35,7 +35,7 @@ class TypeTest {
     private final double sampledouble = 55.25;
     private final String samplestringstring = "abcdef";
     private final String samplestringint = String.valueOf(sampleint);
-    private final String samplestringlong = String.valueOf(samplelong);
+    private final String samplestringlong = String.valueOf(samplelong) + ".0";
     private final String samplestringdouble = String.valueOf(sampledouble);
     private final Object sampleobject = new Object();
     private final MyData sampledata = new MyData();
@@ -174,11 +174,11 @@ class TypeTest {
         assertFalse(sometrue.islong());
         assertFalse(somefalse.islong());
         assertTrue(intint.isint());
-        assertTrue(longdouble.islong());
+        assertFalse(longdouble.islong()); // more than 32 bits
         assertFalse(doubledouble.islong());
         assertFalse(stringstring.islong());
         assertTrue(stringint.islong());
-        assertTrue(stringlong.islong());
+        assertFalse(stringlong.islong());
         assertFalse(stringdouble.islong());
         assertFalse(table.islong());
         assertFalse(userdataobj.islong());
@@ -485,11 +485,11 @@ class TypeTest {
         assertEquals("true", sometrue.tojstring());
         assertEquals("0", zero.tojstring());
         assertEquals(String.valueOf(sampleint), intint.tojstring());
-        assertEquals(String.valueOf(samplelong), longdouble.tojstring());
+        assertEquals(String.valueOf(samplelong) + ".0", longdouble.tojstring());
         assertEquals(String.valueOf(sampledouble), doubledouble.tojstring());
         assertEquals(samplestringstring, stringstring.tojstring());
         assertEquals(String.valueOf(sampleint), stringint.tojstring());
-        assertEquals(String.valueOf(samplelong), stringlong.tojstring());
+        assertEquals(String.valueOf(samplelong) + ".0", stringlong.tojstring());
         assertEquals(String.valueOf(sampledouble), stringdouble.tojstring());
         assertEquals("table: ", table.tojstring().substring(0, 7));
         assertEquals(sampleobject.toString(), userdataobj.tojstring());
@@ -626,14 +626,14 @@ class TypeTest {
         throwsError(somefalse, "optint", int.class, 33);
         assertEquals(0, zero.optint(33));
         assertEquals(sampleint, intint.optint(33));
-        assertEquals((int) samplelong, longdouble.optint(33));
-        assertEquals((int) sampledouble, doubledouble.optint(33));
+        throwsError(longdouble, "optint", int.class, 33);
+        throwsError(doubledouble, "optint", int.class, 33);
         throwsError(somefunc, "optint", int.class, 33);
         throwsError(someclosure, "optint", int.class, 33);
         throwsError(stringstring, "optint", int.class, 33);
         assertEquals(sampleint, stringint.optint(33));
-        assertEquals((int) samplelong, stringlong.optint(33));
-        assertEquals((int) sampledouble, stringdouble.optint(33));
+        throwsError(stringlong, "optint", int.class, 33);
+        throwsError(stringdouble, "optint", int.class, 33);
         throwsError(table, "optint", int.class, 33);
         throwsError(userdataobj, "optint", int.class, 33);
         throwsError(userdatacls, "optint", int.class, 33);
@@ -646,14 +646,14 @@ class TypeTest {
         throwsError(somefalse, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         assertEquals(zero, zero.optinteger(LuaValue.valueOf(33)));
         assertEquals(LuaValue.valueOf(sampleint), intint.optinteger(LuaValue.valueOf(33)));
-        assertEquals(LuaValue.valueOf((int) samplelong), longdouble.optinteger(LuaValue.valueOf(33)));
-        assertEquals(LuaValue.valueOf((int) sampledouble), doubledouble.optinteger(LuaValue.valueOf(33)));
+        throwsError(longdouble, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
+        throwsError(doubledouble, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(somefunc, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(someclosure, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(stringstring, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         assertEquals(LuaValue.valueOf(sampleint), stringint.optinteger(LuaValue.valueOf(33)));
-        assertEquals(LuaValue.valueOf((int) samplelong), stringlong.optinteger(LuaValue.valueOf(33)));
-        assertEquals(LuaValue.valueOf((int) sampledouble), stringdouble.optinteger(LuaValue.valueOf(33)));
+        throwsError(stringlong, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
+        throwsError(stringdouble, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(table, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(userdataobj, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
         throwsError(userdatacls, "optinteger", LuaInteger.class, LuaValue.valueOf(33));
@@ -666,14 +666,14 @@ class TypeTest {
         throwsError(somefalse, "optlong", long.class, 33L);
         assertEquals(0L, zero.optlong(33));
         assertEquals(sampleint, intint.optlong(33));
-        assertEquals(samplelong, longdouble.optlong(33));
-        assertEquals((long) sampledouble, doubledouble.optlong(33));
+        throwsError(longdouble, "optlong", long.class, 33L);
+        throwsError(doubledouble, "optlong", long.class, 33L);
         throwsError(somefunc, "optlong", long.class, 33L);
         throwsError(someclosure, "optlong", long.class, 33L);
         throwsError(stringstring, "optlong", long.class, 33L);
         assertEquals(sampleint, stringint.optlong(33));
-        assertEquals(samplelong, stringlong.optlong(33));
-        assertEquals((long) sampledouble, stringdouble.optlong(33));
+        throwsError(stringlong, "optlong", long.class, 33L);
+        throwsError(stringdouble, "optlong", long.class, 33L);
         throwsError(table, "optlong", long.class, 33L);
         throwsError(userdataobj, "optlong", long.class, 33L);
         throwsError(userdatacls, "optlong", long.class, 33L);
@@ -957,14 +957,14 @@ class TypeTest {
         throwsErrorReq(somefalse, "checkint");
         assertEquals(0, zero.checkint());
         assertEquals(sampleint, intint.checkint());
-        assertEquals((int) samplelong, longdouble.checkint());
-        assertEquals((int) sampledouble, doubledouble.checkint());
+        throwsErrorReq(longdouble, "checkint");
+        throwsErrorReq(doubledouble, "checkint");
         throwsErrorReq(somefunc, "checkint");
         throwsErrorReq(someclosure, "checkint");
         throwsErrorReq(stringstring, "checkint");
         assertEquals(sampleint, stringint.checkint());
-        assertEquals((int) samplelong, stringlong.checkint());
-        assertEquals((int) sampledouble, stringdouble.checkint());
+        throwsErrorReq(stringlong, "checkint");
+        throwsErrorReq(stringdouble, "checkint");
         throwsErrorReq(table, "checkint");
         throwsErrorReq(userdataobj, "checkint");
         throwsErrorReq(userdatacls, "checkint");
@@ -977,14 +977,14 @@ class TypeTest {
         throwsErrorReq(somefalse, "checkinteger");
         assertEquals(zero, zero.checkinteger());
         assertEquals(LuaValue.valueOf(sampleint), intint.checkinteger());
-        assertEquals(LuaValue.valueOf((int) samplelong), longdouble.checkinteger());
-        assertEquals(LuaValue.valueOf((int) sampledouble), doubledouble.checkinteger());
+        throwsErrorReq(longdouble, "checkinteger");
+        throwsErrorReq(doubledouble, "checkinteger");
         throwsErrorReq(somefunc, "checkinteger");
         throwsErrorReq(someclosure, "checkinteger");
         throwsErrorReq(stringstring, "checkinteger");
         assertEquals(LuaValue.valueOf(sampleint), stringint.checkinteger());
-        assertEquals(LuaValue.valueOf((int) samplelong), stringlong.checkinteger());
-        assertEquals(LuaValue.valueOf((int) sampledouble), stringdouble.checkinteger());
+        throwsErrorReq(stringlong, "checkinteger");
+        throwsErrorReq(stringdouble, "checkinteger");
         throwsErrorReq(table, "checkinteger");
         throwsErrorReq(userdataobj, "checkinteger");
         throwsErrorReq(userdatacls, "checkinteger");
@@ -997,14 +997,14 @@ class TypeTest {
         throwsErrorReq(somefalse, "checklong");
         assertEquals(0L, zero.checklong());
         assertEquals(sampleint, intint.checklong());
-        assertEquals(samplelong, longdouble.checklong());
-        assertEquals((long) sampledouble, doubledouble.checklong());
+        throwsErrorReq(longdouble, "checklong");
+        throwsErrorReq(doubledouble, "checklong");
         throwsErrorReq(somefunc, "checklong");
         throwsErrorReq(someclosure, "checklong");
         throwsErrorReq(stringstring, "checklong");
         assertEquals(sampleint, stringint.checklong());
-        assertEquals(samplelong, stringlong.checklong());
-        assertEquals((long) sampledouble, stringdouble.checklong());
+        throwsErrorReq(stringlong, "checklong");
+        throwsErrorReq(stringdouble, "checklong");
         throwsErrorReq(table, "checklong");
         throwsErrorReq(userdataobj, "checklong");
         throwsErrorReq(userdatacls, "checklong");
@@ -1176,4 +1176,39 @@ class TypeTest {
         assertEquals(userdatacls, userdatacls.checknotnil());
     }
 
+
+    // ===================== 32 bit integers and floats =======================
+
+    @Test
+    void testFloatWithAnIntegerValueConvertsToAnInteger() {
+        LuaValue twelve = LuaValue.valueOf(12.0);
+        assertTrue(twelve instanceof LuaDouble);
+        assertTrue(twelve.isint());
+        assertFalse(twelve.isinttype());
+        assertEquals(12, twelve.checkint());
+        assertEquals(LuaValue.valueOf(12), twelve.checkinteger());
+        assertEquals(12, twelve.optint(33));
+        assertEquals("12.0", twelve.tojstring());
+        assertEquals(LuaValue.valueOf(-5), LuaValue.valueOf(-5.0).checkinteger());
+        assertEquals(Integer.MIN_VALUE, LuaValue.valueOf(-2147483648.0).checkint());
+    }
+
+    @Test
+    void testFloatWithoutAnIntegerValueIsRejected() {
+        throwsErrorReq(LuaValue.valueOf(2147483648.0), "checkint");
+        throwsErrorReq(LuaValue.valueOf(-2147483649.0), "checkint");
+        throwsErrorReq(LuaValue.valueOf(0.5), "checkint");
+        throwsErrorReq(LuaValue.valueOf(Double.NaN), "checkint");
+        throwsErrorReq(LuaValue.valueOf(Double.POSITIVE_INFINITY), "checkint");
+    }
+
+    @Test
+    void testStringsConvertToIntegersOrFloats() {
+        assertTrue(LuaValue.valueOf("10").tonumber() instanceof LuaInteger);
+        assertTrue(LuaValue.valueOf("10.0").tonumber() instanceof LuaDouble);
+        assertTrue(LuaValue.valueOf("1e1").tonumber() instanceof LuaDouble);
+        assertTrue(LuaValue.valueOf("2147483648").tonumber() instanceof LuaDouble);
+        assertEquals(LuaValue.valueOf(-1), LuaValue.valueOf("0xffffffff").tonumber());
+        assertEquals(10, LuaValue.valueOf("10.0").checkint());
+    }
 }

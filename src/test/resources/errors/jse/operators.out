@@ -89,7 +89,7 @@
 -		plusop('789',<function>)	...attempt to perform arithmetic...
 ====== - ======
 --- checkallpass
--		minusop(1.25,1.25)	0
+-		minusop(1.25,1.25)	0.0
 -		minusop('789',1.25)	787.75
 -		minusop(1.25,'789')	-787.75
 -		minusop('789','789')	0
@@ -145,10 +145,10 @@
 -		timesop('789',<function>)	...attempt to perform arithmetic...
 ====== / ======
 --- checkallpass
--		divideop(1.25,1.25)	1
+-		divideop(1.25,1.25)	1.0
 -		divideop('789',1.25)	631.2
 -		divideop(1.25,'789')	0.001584...
--		divideop('789','789')	1
+-		divideop('789','789')	1.0
 --- checkallerrors
 -		divideop(nil,1.25)	...attempt to perform arithmetic...
 -		divideop('abc',1.25)	...attempt to perform arithmetic...
@@ -173,7 +173,7 @@
 -		divideop('789',<function>)	...attempt to perform arithmetic...
 ====== % ======
 --- checkallpass
--		modop(1.25,1.25)	0
+-		modop(1.25,1.25)	0.0
 -		modop('789',1.25)	0.25
 -		modop(1.25,'789')	1.25
 -		modop('789','789')	0
@@ -201,7 +201,7 @@
 -		modop('789',<function>)	...attempt to perform arithmetic...
 ====== ^ ======
 --- checkallpass
--		powerop(2,3)	8
+-		powerop(2,3)	8.0
 -		powerop('2.5',3)	15.625
 -		powerop(2,'3.5')	11.31370...
 -		powerop('2.5','3.5')	24.70529...

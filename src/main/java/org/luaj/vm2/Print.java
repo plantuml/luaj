@@ -40,7 +40,7 @@ public class Print extends Lua {
 	public static final String[] OP_NAMES = { "MOVE", "LOADK", "LOADKX", "LOADBOOL", "LOADNIL", "GETUPVAL", "GETTABUP",
 		"GETTABLE", "SETTABUP", "SETUPVAL", "SETTABLE", "NEWTABLE", "SELF", "ADD", "SUB", "MUL", "DIV", "MOD",
 		"POW", "UNM", "NOT", "LEN", "CONCAT", "JMP", "EQ", "LT", "LE", "TEST", "TESTSET", "CALL", "TAILCALL",
-		"RETURN", "FORLOOP", "FORPREP", "TFORCALL", "TFORLOOP", "SETLIST", "CLOSURE", "VARARG", "EXTRAARG", null, };
+		"RETURN", "FORLOOP", "FORPREP", "TFORCALL", "TFORLOOP", "SETLIST", "CLOSURE", "VARARG", "EXTRAARG", "IDIV", null, };
 
 	static void printString(PrintStream ps, final LuaString s) {
 
@@ -240,6 +240,8 @@ public class Print extends Lua {
 				case OP_SUB:
 				case OP_MUL:
 				case OP_DIV:
+				case OP_MOD:
+				case OP_IDIV:
 				case OP_POW:
 				case OP_EQ:
 				case OP_LT:

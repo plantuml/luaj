@@ -74,13 +74,11 @@ public class LuaDouble extends LuaNumber {
 	/** The value being held by this instance. */
 	final double v;
 
-	public static LuaNumber valueOf(double d) {
-		int id = (int) d;
-		// negative zero must stay a double: as the integer 0 it would lose its sign
-		return d==id && !(id==0 && 1/d<0)? (LuaNumber) LuaInteger.valueOf(id): (LuaNumber) new LuaDouble(d);
+	/** A float is always a LuaDouble: it is never converted to an integer value. */
+	public static LuaDouble valueOf(double d) {
+		return new LuaDouble(d);
 	}
 	
-	/** Don't allow ints to be boxed by DoubleValues  */
 	private LuaDouble(double d) {
 		this.v = d;
 	}
@@ -90,8 +88,13 @@ public class LuaDouble extends LuaNumber {
 		return ((int)(l>>32)) + (int) l;
 	}
 	
+	/** True if the float has an exact int (32 bits) value. */
+	public boolean isint() {
+		return v == (int) v;
+	}
+	
 	public boolean islong() {
-		return v == (long) v;
+		return isint();
 	}
 	
 	public byte    tobyte()        { return (byte) (long) v; }
@@ -102,12 +105,20 @@ public class LuaDouble extends LuaNumber {
 	public long    tolong()        { return (long) v; }
 	public short   toshort()       { return (short) (long) v; }
 
+	/** The exact int value, or an error "number has no integer representation". */
+	private int exactint() {
+		int i = (int) v;
+		if (i != v)
+			throw new LuaError("bad argument (number has no integer representation)");
+		return i;
+	}
+
 	public double      optdouble(double defval)        { return v; }
-	public int         optint(int defval)              { return (int) (long) v;  }
-	public LuaInteger  optinteger(LuaInteger defval)   { return LuaInteger.valueOf((int) (long)v); }
-	public long        optlong(long defval)            { return (long) v; }
+	public int         optint(int defval)              { return exactint(); }
+	public LuaInteger  optinteger(LuaInteger defval)   { return LuaInteger.valueOf(exactint()); }
+	public long        optlong(long defval)            { return exactint(); }
 	
-	public LuaInteger  checkinteger()                  { return LuaInteger.valueOf( (int) (long) v ); }
+	public LuaInteger  checkinteger()                  { return LuaInteger.valueOf(exactint()); }
 	
 	// unary operators
 	public LuaValue neg() { return valueOf(-v); }
@@ -124,13 +135,15 @@ public class LuaDouble extends LuaNumber {
 	public boolean raweq( double val )        { return v == val; }
 	public boolean raweq( int val )           { return v == val; }
 	
-	// basic binary arithmetic
+	// basic binary arithmetic: a float operand always gives a float
 	public LuaValue add(LuaValue rhs )        { return rhs.add(v); }
 	public LuaValue add(double lhs )     { return LuaDouble.valueOf(lhs + v); }
+	public LuaValue add(int lhs )        { return LuaDouble.valueOf(lhs + v); }
 	public LuaValue sub(LuaValue rhs )        { return rhs.subFrom(v); }
 	public LuaValue sub(double rhs )        { return LuaDouble.valueOf(v - rhs); }
 	public LuaValue sub(int rhs )        { return LuaDouble.valueOf(v - rhs); }
 	public LuaValue subFrom(double lhs )   { return LuaDouble.valueOf(lhs - v); }
+	public LuaValue subFrom(int lhs )      { return LuaDouble.valueOf(lhs - v); }
 	public LuaValue mul(LuaValue rhs )        { return rhs.mul(v); }
 	public LuaValue mul(double lhs )   { return LuaDouble.valueOf(lhs * v); }
 	public LuaValue mul(int lhs )      { return LuaDouble.valueOf(lhs * v); }
@@ -143,11 +156,22 @@ public class LuaDouble extends LuaNumber {
 	public LuaValue div(double rhs )        { return LuaDouble.ddiv(v,rhs); }
 	public LuaValue div(int rhs )        { return LuaDouble.ddiv(v,rhs); }
 	public LuaValue divInto(double lhs )   { return LuaDouble.ddiv(lhs,v); }
+	public LuaValue divInto(int lhs )      { return LuaDouble.ddiv(lhs,v); }
 	public LuaValue mod(LuaValue rhs )        { return rhs.modFrom(v); }
 	public LuaValue mod(double rhs )        { return LuaDouble.dmod(v,rhs); }
 	public LuaValue mod(int rhs )        { return LuaDouble.dmod(v,rhs); }
 	public LuaValue modFrom(double lhs )   { return LuaDouble.dmod(lhs,v); }
+	public LuaValue modFrom(int lhs )      { return LuaDouble.dmod(lhs,v); }
+	public LuaValue idiv(LuaValue rhs )       { return rhs.idivFrom(v); }
+	public LuaValue idiv(double rhs )       { return LuaDouble.didiv(v,rhs); }
+	public LuaValue idiv(int rhs )       { return LuaDouble.didiv(v,rhs); }
+	public LuaValue idivFrom(double lhs )  { return LuaDouble.didiv(lhs,v); }
+	public LuaValue idivFrom(int lhs )     { return LuaDouble.didiv(lhs,v); }
 	
+	/** Floor division of floats (lua <code>//</code>). */
+	public static LuaValue didiv(double lhs, double rhs) {
+		return valueOf( Math.floor(lhs / rhs) );
+	}
 	
 	/** Divide two double numbers according to lua math, and return a {@link LuaValue} result.
 	 * @param lhs Left-hand-side of the division.
@@ -178,17 +202,11 @@ public class LuaDouble extends LuaNumber {
 	 * @see #dmod_d(double, double)
 	 */
 	public static LuaValue dmod(double lhs, double rhs) {
-		if (rhs == 0 || lhs == Double.POSITIVE_INFINITY || lhs == Double.NEGATIVE_INFINITY) return NAN;
-		if (rhs == Double.POSITIVE_INFINITY) {
-			return lhs < 0 ? POSINF : valueOf(lhs);
-		}
-		if (rhs == Double.NEGATIVE_INFINITY) {
-			return lhs > 0 ? NEGINF : valueOf(lhs);
-		}
-		return valueOf( lhs-rhs*Math.floor(lhs/rhs) );
+		return valueOf( dmod_d(lhs, rhs) );
 	}
 
 	/** Take modulo for double numbers according to lua math, and return a double result.
+	 * It is the C <code>fmod</code> corrected so that the result has the sign of the divisor.
 	 * @param lhs Left-hand-side of the modulo.
 	 * @param rhs Right-hand-side of the modulo.
 	 * @return double value for the result of the modulo,
@@ -196,14 +214,8 @@ public class LuaDouble extends LuaNumber {
 	 * @see #dmod(double, double)
 	 */
 	public static double dmod_d(double lhs, double rhs) {
-		if (rhs == 0 || lhs == Double.POSITIVE_INFINITY || lhs == Double.NEGATIVE_INFINITY) return Double.NaN;
-		if (rhs == Double.POSITIVE_INFINITY) {
-			return lhs < 0 ? Double.POSITIVE_INFINITY : lhs;
-		}
-		if (rhs == Double.NEGATIVE_INFINITY) {
-			return lhs > 0 ? Double.NEGATIVE_INFINITY : lhs;
-		}
-		return lhs-rhs*Math.floor(lhs/rhs);
+		double m = lhs % rhs;
+		return m * rhs < 0? m + rhs: m;
 	}
 
 	// relational operators
@@ -235,8 +247,15 @@ public class LuaDouble extends LuaNumber {
 	// string comparison
 	public int strcmp( LuaString rhs )      { typeError("attempt to compare number with string"); return 0; }
 			
+	/** The text of a float always looks like a float: 100.0 is written "100.0", not "100". */
 	public String tojstring() {
-		return NumberFormatter.tostring(v);
+		String s = NumberFormatter.tostring(v);
+		for (int i = 0; i < s.length(); i++) {
+			char c = s.charAt(i);
+			if (c != '-' && (c < '0' || c > '9'))
+				return s; // already has a point, an exponent, inf or nan
+		}
+		return s + ".0";
 	}
 	
 	public LuaString strvalue() {
@@ -270,8 +289,8 @@ public class LuaDouble extends LuaNumber {
 	public LuaValue tonumber() {
 		return this;
 	}
-	public int checkint()                { return (int) (long) v; }
-	public long checklong()              { return (long) v; }
+	public int checkint()                { return exactint(); }
+	public long checklong()              { return exactint(); }
 	public LuaNumber checknumber()       { return this; }
 	public double checkdouble()          { return v; }
 	

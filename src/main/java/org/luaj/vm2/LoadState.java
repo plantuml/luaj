@@ -128,8 +128,8 @@ public class LoadState {
 	public static final String SOURCE_BINARY_STRING = "binary string";
 
 
-	/** for header of binary files -- this is Lua 5.2 */
-	public static final int LUAC_VERSION		= 0x52;
+	/** for header of binary files -- this is Lua 5.3 (32 bit integers) */
+	public static final int LUAC_VERSION		= 0x53;
 
 	/** for header of binary files -- this is the official format */
 	public static final int LUAC_FORMAT		= 0;
@@ -229,25 +229,10 @@ public class LoadState {
 	/**
 	 * Convert bits in a long value to a {@link LuaValue}.
 	 * @param bits long value containing the bits
-	 * @return {@link LuaInteger} or {@link LuaDouble} whose value corresponds to the bits provided.
+	 * @return {@link LuaDouble} whose value corresponds to the bits provided.
 	 */
 	public static LuaValue longBitsToLuaNumber(long bits ) {
-		if ( ( bits & ( ( 1L << 63 ) - 1 ) ) == 0L ) {
-			return LuaConstant.ZERO;
-		}
-		
-		int e = (int)((bits >> 52) & 0x7ffL) - 1023;
-		
-		if ( e >= 0 && e < 31 ) {
-			long f = bits & 0xFFFFFFFFFFFFFL;
-			int shift = 52 - e;
-			long intPrecMask = ( 1L << shift ) - 1;
-			if ( ( f & intPrecMask ) == 0 ) {
-				int intValue = (int)( f >> shift ) | ( 1 << e );
-				return LuaInteger.valueOf( ( ( bits >> 63 ) != 0 ) ? -intValue : intValue );
-			}
-		}
-		
+		// a float stays a float, even when its value is integral: integers have their own constant type
 		return LuaValue.valueOf( Double.longBitsToDouble(bits) );
 	}
 	

@@ -52,20 +52,6 @@ public class LuaInteger extends LuaNumber {
 		return i<=255 && i>=-256? intValues[i+256]: new LuaInteger(i);
 	};
 	
-	 // TODO consider moving this to LuaValue
-	/** Return a LuaNumber that represents the value provided
-	 * @param l long value to represent.
-	 * @return LuaNumber that is eithe LuaInteger or LuaDouble representing l
-	 * @see LuaValue#valueOf(int)
-	 * @see LuaValue#valueOf(double)
-	 */
-	public static LuaNumber valueOf(long l) {
-		int i = (int) l;
-		return l==i? (i<=255 && i>=-256? intValues[i+256]:
-			(LuaNumber) new LuaInteger(i)):
-			(LuaNumber) LuaDouble.valueOf(l);
-	}
-	
 	/** The value being held by this instance. */
 	public final int v;
 	
@@ -131,7 +117,7 @@ public class LuaInteger extends LuaNumber {
 	}
 
 	// unary operators
-	public LuaValue neg() { return valueOf(-(long)v); }
+	public LuaValue neg() { return valueOf(-v); }
 	
 	// object equality, used for key comparison
 	public boolean equals(Object o) { return o instanceof LuaInteger? ((LuaInteger)o).v == v: false; }
@@ -145,18 +131,18 @@ public class LuaInteger extends LuaNumber {
 	public boolean raweq( double val )    { return v == val; }
 	public boolean raweq( int val )       { return v == val; }
 	
-	// arithmetic operators
+	// arithmetic operators: int op int gives an int (wraps like a java int), anything with a float gives a float
 	public LuaValue add(LuaValue rhs )        { return rhs.add(v); }
 	public LuaValue add(double lhs )     { return LuaDouble.valueOf(lhs + v); }
-	public LuaValue add(int lhs )        { return LuaInteger.valueOf(lhs + (long)v); }
+	public LuaValue add(int lhs )        { return LuaInteger.valueOf(lhs + v); }
 	public LuaValue sub(LuaValue rhs )        { return rhs.subFrom(v); }
 	public LuaValue sub(double rhs )        { return LuaDouble.valueOf(v - rhs); }
-	public LuaValue sub(int rhs )        { return LuaDouble.valueOf(v - rhs); }
+	public LuaValue sub(int rhs )        { return LuaInteger.valueOf(v - rhs); }
 	public LuaValue subFrom(double lhs )   { return LuaDouble.valueOf(lhs - v); }
-	public LuaValue subFrom(int lhs )      { return LuaInteger.valueOf(lhs - (long)v); }
+	public LuaValue subFrom(int lhs )      { return LuaInteger.valueOf(lhs - v); }
 	public LuaValue mul(LuaValue rhs )        { return rhs.mul(v); }
 	public LuaValue mul(double lhs )   { return LuaDouble.valueOf(lhs * v); }
-	public LuaValue mul(int lhs )      { return LuaInteger.valueOf(lhs * (long)v); }
+	public LuaValue mul(int lhs )      { return LuaInteger.valueOf(lhs * v); }
 	public LuaValue pow(LuaValue rhs )        { return rhs.powWith(v); }
 	public LuaValue pow(double rhs )        { return MathLib.dpow(v,rhs); }
 	public LuaValue pow(int rhs )        { return MathLib.dpow(v,rhs); }
@@ -166,10 +152,33 @@ public class LuaInteger extends LuaNumber {
 	public LuaValue div(double rhs )        { return LuaDouble.ddiv(v,rhs); }
 	public LuaValue div(int rhs )        { return LuaDouble.ddiv(v,rhs); }
 	public LuaValue divInto(double lhs )   { return LuaDouble.ddiv(lhs,v); }
+	public LuaValue divInto(int lhs )      { return LuaDouble.ddiv(lhs,v); }
 	public LuaValue mod(LuaValue rhs )        { return rhs.modFrom(v); }
 	public LuaValue mod(double rhs )        { return LuaDouble.dmod(v,rhs); }
-	public LuaValue mod(int rhs )        { return LuaDouble.dmod(v,rhs); }
+	public LuaValue mod(int rhs )        { return LuaInteger.valueOf(imod(v,rhs)); }
 	public LuaValue modFrom(double lhs )   { return LuaDouble.dmod(lhs,v); }
+	public LuaValue modFrom(int lhs )      { return LuaInteger.valueOf(imod(lhs,v)); }
+	public LuaValue idiv(LuaValue rhs )       { return rhs.idivFrom(v); }
+	public LuaValue idiv(double rhs )       { return LuaDouble.didiv(v,rhs); }
+	public LuaValue idiv(int rhs )       { return LuaInteger.valueOf(iidiv(v,rhs)); }
+	public LuaValue idivFrom(double lhs )  { return LuaDouble.didiv(lhs,v); }
+	public LuaValue idivFrom(int lhs )     { return LuaInteger.valueOf(iidiv(lhs,v)); }
+
+	/** Integer modulo, the result has the sign of the divisor (lua rule); throws if the divisor is zero. */
+	public static int imod(int a, int b) {
+		if (b == 0)
+			throw new LuaError("attempt to perform 'n%%0'");
+		int m = a % b;
+		return m != 0 && (m ^ b) < 0? m + b: m;
+	}
+
+	/** Integer floor division (lua <code>//</code>), wraps on minint // -1; throws if the divisor is zero. */
+	public static int iidiv(int a, int b) {
+		if (b == 0)
+			throw new LuaError("attempt to perform 'n//0'");
+		int q = a / b;
+		return (a % b != 0) && ((a ^ b) < 0)? q - 1: q;
+	}
 	
 	// relational operators
 	public LuaValue lt(LuaValue rhs )         { return rhs instanceof LuaNumber ? (rhs.gt_b(v)? LuaConstant.TRUE: LuaConstant.FALSE) : super.lt(rhs); }
