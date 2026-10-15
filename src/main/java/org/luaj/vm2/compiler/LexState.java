@@ -446,6 +446,30 @@ public class LexState extends Constants {
 		return (hexvalue(c1) << 4) + hexvalue(c2);
 	}
 
+	/** Reads a <code>\\u{XXX}</code> escape (current is the 'u') and saves its UTF-8 bytes. */
+	void readutf8esc() {
+		nextChar(); /* skip 'u' */
+		if (current != '{')
+			lexerror("missing '{' in \\u{xxxx}", TK_STRING);
+		nextChar();
+		if (!isxdigit(current))
+			lexerror("hexadecimal digit expected", TK_STRING);
+		long r = 0;
+		while (isxdigit(current)) {
+			r = (r << 4) + hexvalue(current);
+			if (r > 0x7FFFFFFFL)
+				lexerror("UTF-8 value too large", TK_STRING);
+			nextChar();
+		}
+		if (current != '}')
+			lexerror("missing '}' in \\u{xxxx}", TK_STRING);
+		nextChar();
+		byte[] tmp = new byte[6];
+		int n = org.luaj.vm2.lib.Utf8Lib.encode((int) r, tmp);
+		for (int i = 0; i < n; i++)
+			save(tmp[i] & 0xFF);
+	}
+
 	void read_string(int del, SemInfo seminfo) {
 		save_and_next();
 		while (current != del) {
@@ -485,6 +509,9 @@ public class LexState extends Constants {
 				case 'x':
 					c = readhexaesc();
 					break;
+				case 'u':
+					readutf8esc();
+					continue;
 				case '\n': /* go through */
 				case '\r':
 					save('\n');

@@ -32,6 +32,7 @@ import org.luaj.vm2.lib.PackageLib;
 import org.luaj.vm2.lib.ResourceFinder;
 import org.luaj.vm2.lib.StringLib;
 import org.luaj.vm2.lib.TableLib;
+import org.luaj.vm2.lib.Utf8Lib;
 
 /** The {@link org.luaj.vm2.lib.jse.JsePlatform} class is a convenience class to standardize
  * how globals tables are initialized for the JSE platform.
@@ -65,6 +66,7 @@ import org.luaj.vm2.lib.TableLib;
  * <li>{@link TableLib}</li>
  * <li>{@link StringLib}</li>
  * <li>{@link MathLib}</li>
+ * <li>{@link Utf8Lib}</li>
  * </ul>
  * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
  * <p>
@@ -86,6 +88,7 @@ public class JsePlatform {
 		globals.load(new PackageLib());
 		globals.load(new TableLib());
 		globals.load(new StringLib());
+		globals.load(new Utf8Lib());
 		globals.load(new MathLib());
 		LoadState.install(globals);
 		LuaC.install(globals);
