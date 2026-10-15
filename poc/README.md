@@ -20,8 +20,8 @@ wrapper of the parent (from this `poc` directory):
 ../gradlew generateC
 ```
 
-The TeaVM version is `0.11.0` by default; change it with
-`../gradlew -PteavmVersion=<version> ...` or in `build.gradle`.
+The TeaVM version is `0.11.0`; change it in the `plugins` block of
+`build.gradle.kts`.
 The task names and the output folders (under `build/generated/teavm/`) are
 those of the TeaVM Gradle plugin; if your version names them differently,
 `../gradlew tasks --all | grep -i generate` lists them.

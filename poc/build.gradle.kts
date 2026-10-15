@@ -6,9 +6,9 @@
 // of the parent:  ../gradlew <task>   (see README.md in this directory).
 
 plugins {
-    id 'java'
-    id 'application'
-    id 'org.teavm' version "${findProperty('teavmVersion') ?: '0.11.0'}"
+    java
+    application
+    id("org.teavm") version "0.11.0" // change here to try another TeaVM version
 }
 
 repositories {
@@ -20,8 +20,8 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
+tasks.withType<JavaCompile>().configureEach {
+    options.encoding = "UTF-8"
     options.release.set(11)
 }
 
@@ -29,25 +29,25 @@ sourceSets {
     main {
         java {
             // the library itself, shared with the parent build
-            srcDir '../src/main/java'
+            srcDir("../src/main/java")
             // command-line tools of the library: default package, files, reflection
-            exclude 'lua.java', 'luac.java'
+            exclude("lua.java", "luac.java")
         }
     }
 }
 
-def pocMain = 'org.luaj.poc.Main'
+val pocMain = "org.luaj.poc.Main"
 
 application {
-    mainClass = pocMain
+    mainClass.set(pocMain)
 }
 
 teavm {
     all {
-        mainClass = pocMain
+        mainClass.set(pocMain)
     }
     js {
-        targetFileName = 'luaj-poc.js'
+        targetFileName.set("luaj-poc.js")
     }
     c {
         // default options; the generated files are in build/generated/teavm/c
@@ -56,18 +56,22 @@ teavm {
 
 // Reference output: the test program on the JVM, without the timing lines
 // ('#' lines are timings: they are not comparable).
-tasks.register('jvmReference', JavaExec) {
-    group = 'verification'
-    description = 'Runs the test program on the JVM and writes build/jvm.txt'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = pocMain
-    def out = layout.buildDirectory.file('jvm-raw.txt')
-    def filtered = layout.buildDirectory.file('jvm.txt')
+tasks.register<JavaExec>("jvmReference") {
+    group = "verification"
+    description = "Runs the test program on the JVM and writes build/jvm.txt"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set(pocMain)
+    val raw = layout.buildDirectory.file("jvm-raw.txt")
+    val filtered = layout.buildDirectory.file("jvm.txt")
     doFirst {
-        standardOutput = new FileOutputStream(out.get().asFile)
+        raw.get().asFile.parentFile.mkdirs()
+        standardOutput = raw.get().asFile.outputStream()
     }
     doLast {
-        filtered.get().asFile.text = out.get().asFile.readLines('UTF-8')
-                .findAll { !it.startsWith('#') }.join('\n') + '\n'
+        filtered.get().asFile.writeText(
+            raw.get().asFile.readLines(Charsets.UTF_8)
+                .filter { !it.startsWith("#") }
+                .joinToString("\n") + "\n"
+        )
     }
 }
