@@ -8,6 +8,7 @@
 plugins {
     java
     application
+    eclipse // `gradlew eclipse` works here too, like in the other builds
     id("org.teavm") version "0.16.0" // same version as the PlantUML build
 }
 
