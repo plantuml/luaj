@@ -55,8 +55,12 @@ teavm {
         shortFileNames.set(false)
         // same setting as the PlantUML build (AGGRESSIVE is the default of TeaVM C)
         optimization.set(org.teavm.gradle.api.OptimizationLevel.BALANCED)
-        // Heap size in MB
-        maxHeapSize.set(64)
+        // Heap size in MB. TeaVM C starts with a heap of 1 MB (default 1 to 16): the program
+        // reports "free 0 MB of 1 MB" and garbage-collects all the time, and the first runs
+        // crashed (bus error / segmentation fault) while the heap was growing. A fixed heap
+        // (minimum = maximum) avoids both.
+        minHeapSize.set(256)
+        maxHeapSize.set(256)
         // outputDir defaults to build/generated/teavm/c
     }
 }
