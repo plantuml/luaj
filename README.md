@@ -173,9 +173,199 @@ Compared with `!procedure`: arguments are real Lua values (numbers, tables,
 booleans) rather than text, so no `$name` substitution rules and no quoting
 problems; recursion is allowed (up to `maxCallDepth`).
 
-Driving PlantUML from Lua (a `puml.*` API) is not designed yet.
+The APIs the two kinds of Lua would see are sketched in section 2 below; none of it is implemented.
 
-## 2. Where we are
+## 2. Two Lua flavors
+
+There would be **two different uses of Lua in PlantUML**. They share the same
+interpreter (this library) but are configured differently, they run
+independently, and they never see each other's API.
+
+| | **Text Lua** (inside a diagram) | **Engine Lua** (driving the engine) |
+|---|---|---|
+| Purpose | generate or transform PlantUML source text, replacing much of the preprocessor | run PlantUML as a library: parse, lay out, render, many diagrams per run |
+| Where it lives | in the `.puml` file, on `$` / `$$` lines | in a standalone `.lua` script given to the executable |
+| Editions | all: JAR, JavaScript, C | **JAR and C only**, never in the browser |
+| Lifetime | one fresh `Globals` per diagram, thrown away afterwards | long-lived, serves many diagrams |
+| I/O | none; resources only through `Globals.finder`, under PlantUML's security profile | decided by the host: files, console, exit code |
+| Determinism | mandatory (same output on every edition) | not required |
+| Limits | strict (call depth, later instruction count and memory) | looser |
+| Errors | reported on the diagram line, like preprocessor errors | stack trace on the console |
+| Main API | `puml.*` | `plantuml.*` |
+
+The two compose in one direction only: engine Lua calls `plantuml.render`,
+which starts a fresh text Lua for each diagram it renders. Text Lua can never
+call `render`, so a diagram cannot start renders of its own, and the two
+states never share anything except the data the engine passes in
+(`args`). On a server, only the text flavor is exposed.
+
+This library stays generic (a Lua interpreter and its standard libraries).
+The `puml` and `plantuml` libraries belong to the PlantUML code base, which
+hands a configured `Globals` to the interpreter.
+
+Everything in this section is a design sketch.
+
+### 2.1 Text Lua: the `puml` API
+
+Values exchanged are plain Lua values (strings, numbers, booleans, tables).
+No Java objects are exposed.
+
+Level 0, generate text (essential):
+
+- `puml.emit(line)` appends a line to the generated source; `emit` may also
+  exist as a global alias.
+- `puml.quote(s)` quotes and escapes a string.
+- `puml.id(s)` builds a valid PlantUML identifier from any string (accents,
+  spaces, dashes).
+- `puml.error(msg)` raises an error attached to the current diagram line.
+  Plain Lua errors also carry the right line number.
+
+Level 1, read the environment:
+
+- `puml.version`, `puml.edition` (`"jar"`, `"js"` or `"c"`).
+- `puml.args`: the variables given on the command line, as a table (and, for
+  the engine, the `args` passed to `plantuml.render`).
+
+Level 2, data:
+
+- `puml.json.decode` / `puml.json.encode` (`%load_json` is a common use of
+  the current preprocessor).
+- `puml.read(name)` loads a text or JSON resource through `Globals.finder`,
+  with the same rules and security profile as `!include`. There is no direct
+  disk access from text Lua.
+- `require` for Lua modules shipped as resources (stdlib), through the same
+  finder.
+
+Other rules: one `Globals` per diagram, shared with its `!include`d files;
+no clock, and `math.random` seeded per diagram, so a diagram renders the
+same on every edition.
+
+Not planned: introspecting the laid-out model (positions, sizes of
+participants). It would freeze PlantUML's internals into a public API.
+
+### 2.2 Engine Lua: the `plantuml` API
+
+The host provides files, rendering and arguments:
+
+- `plantuml.render(source, options)` returns the result (a string for SVG and
+  text formats, bytes for PNG) or raises an error with details. Options:
+  `format`, `theme`, `args` (passed to the text Lua of that diagram).
+- `plantuml.read(path)`, `plantuml.write(path, data)`,
+  `plantuml.glob(pattern)`, `plantuml.list(dir)`, `plantuml.mtime(path)`.
+- `plantuml.args`: command line arguments of the script.
+- A way to exit with a status code, and `print` to the console. The `os` and
+  `io` libraries are removed from this library; whatever the engine flavor
+  needs is provided by `plantuml.*`.
+
+Examples (sketches; none of this exists yet).
+
+**Batch rendering of a folder.** One startup instead of one JVM per file:
+
+```lua
+for _, f in ipairs(plantuml.glob("docs/**/*.puml")) do
+  local out = f:gsub("%.puml$", ".svg")
+  plantuml.write(out, plantuml.render(plantuml.read(f), { format = "svg" }))
+  print("ok", out)
+end
+```
+
+**Incremental rendering**, only what changed:
+
+```lua
+for _, f in ipairs(plantuml.glob("docs/**/*.puml")) do
+  local out = f:gsub("%.puml$", ".png")
+  if plantuml.mtime(f) > (plantuml.mtime(out) or 0) then
+    plantuml.write(out, plantuml.render(plantuml.read(f), { format = "png" }))
+  end
+end
+```
+
+**One diagram, several variants:**
+
+```lua
+local src = plantuml.read("architecture.puml")
+for _, theme in ipairs({ "plain", "cerulean", "sketchy" }) do
+  plantuml.write("out/architecture-" .. theme .. ".svg",
+    plantuml.render(src, { format = "svg", theme = theme }))
+end
+```
+
+**Passing parameters to the text Lua of a diagram.** The engine script
+prepares values that the diagram's own `$` lines read from `puml.args`:
+
+```lua
+local envs = { prod = { "web", "api", "db" }, staging = { "web", "api" } }
+for name, services in pairs(envs) do
+  plantuml.write("out/" .. name .. ".svg",
+    plantuml.render(plantuml.read("deploy.puml"), {
+      format = "svg",
+      args = { env = name, services = services },
+    }))
+end
+```
+
+and in `deploy.puml`:
+
+```plantuml
+@startuml
+$ for _, s in ipairs(puml.args.services) do
+node "${s}"
+$ end
+@enduml
+```
+
+**Documentation pipeline.** Extract the diagram blocks of a Markdown file,
+render them and replace each block by an image link:
+
+````lua
+local md = plantuml.read("guide.md")
+local n = 0
+md = md:gsub("```plantuml\n(.-)```", function(code)
+  n = n + 1
+  local name = "img/guide-" .. n .. ".svg"
+  plantuml.write(name, plantuml.render(code, { format = "svg" }))
+  return "![](" .. name .. ")"
+end)
+plantuml.write("guide.out.md", md)
+````
+
+**Regression tests:**
+
+```lua
+local failed = 0
+for _, f in ipairs(plantuml.glob("tests/*.puml")) do
+  local svg = plantuml.render(plantuml.read(f), { format = "svg" })
+  local ref = f:gsub("%.puml$", ".svg")
+  if svg ~= plantuml.read(ref) then
+    failed = failed + 1
+    print("DIFF", f)
+  end
+end
+plantuml.exit(failed == 0 and 0 or 1)
+```
+
+**A diagram built from the state of the file system.** Here the engine builds
+the source text itself, which text Lua would do with `emit`:
+
+```lua
+local lines = { "@startuml" }
+for _, dir in ipairs(plantuml.list("src")) do
+  lines[#lines + 1] = ('package "%s" {\n}'):format(dir)
+end
+lines[#lines + 1] = "@enduml"
+plantuml.write("structure.svg",
+  plantuml.render(table.concat(lines, "\n"), { format = "svg" }))
+```
+
+**A project file.** A `plantuml.lua` at the root of a project could list the
+diagrams, their formats and a shared theme, and the engine script would build
+everything, like a `Makefile` but in a language the user already knows.
+
+Most of these are tasks people already do with shell scripts around PlantUML.
+The gain would be one tool, one startup, and the same script on Windows
+and Linux.
+
+## 3. Where we are
 
 Branch `plantuml1`. The library has been stripped and hardened, but it is
 still "LuaJ minus things"; nothing PlantUML-specific exists yet.
@@ -207,7 +397,7 @@ Added or changed:
 
 Runtime dependencies: none (JDK only). Test dependency: JUnit 5.
 
-## 3. What remains to do / to clean
+## 4. What remains to do / to clean
 
 Cleaning:
 
@@ -243,7 +433,7 @@ New work:
 5. Limits besides call depth: instruction count, memory, string size.
 6. Performance baseline (startup time matters for the C build).
 
-## 4. Pitfalls
+## 5. Pitfalls
 
 - **Numbers**: Lua 5.2 numeric model. Integers are 32-bit `int` internally
   with automatic promotion to `double`; there are no 64-bit integers.
@@ -267,7 +457,7 @@ New work:
   character-level ambiguity with `${...}` and with `$$` inside PlantUML
   text must be settled before the syntax is frozen.
 
-## 5. Open questions
+## 6. Open questions
 
 - Is Lua 5.2 enough, or do we want 5.3 integers (64-bit)? It costs size and
   speed on JS and C.
@@ -275,6 +465,15 @@ New work:
   (`!include`, `!theme`, variables)? Do both coexist in one diagram, and in
   which order are they evaluated?
 - `$` single-line only, `$$` blocks only, or both?
+- Engine Lua: is it worth a separate entry point (an executable that takes
+  a `.lua` file), and what is its working directory and file policy?
+- Names: "text Lua" / "engine Lua" are working names. Which user-facing
+  names for the two flavors?
+- Execution order for text Lua: run all Lua first and feed the generated
+  text to the existing preprocessor (keeps `!include`, `!theme`, ...), or
+  interleave Lua and preprocessor line by line?
+- Should the global alias `emit` exist, or only `puml.emit`?
+- JSON: write a small parser, or reuse the one of the preprocessor?
 - Procedures: explicit `emit()` (A), a `$ procedure` whose body is PlantUML
   text (B), or both? In B, how does a body line know its indentation and
   how are `$` lines inside a procedure that is itself called from a `$`
