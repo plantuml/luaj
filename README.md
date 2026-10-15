@@ -477,8 +477,8 @@ Runtime dependencies: none (JDK only). Test dependency: JUnit 5.
 ### TeaVM C: what the `poc/` measured
 
 `poc/` (see its README) compiles luaj with TeaVM 0.16.0 to JavaScript and to C
-and runs one test program on the three editions. Results of the first runs of
-the C edition:
+and runs one test program on the three editions. Results of the runs of
+the C edition (Windows, MSVC, ARM64):
 
 - **Output**: identical to the JVM on all the compared lines (number
   formatting, integers that wrap, bitwise operators, `utf8`, strings, tables,
@@ -492,24 +492,27 @@ the C edition:
 - **Heap**: TeaVM C starts with a 1 MB heap and crashed (bus error,
   segmentation fault) while growing it. The build uses a fixed heap
   (`minHeapSize = maxHeapSize = 256`).
-- **Speed**: entering a `try` block costs about 200 ns on the C edition (calls
-  made inside the `try` are fast, 10 ns). The interpreter loop was entirely in
-  a `try`, so each instruction that calls a method paid it: the interpreter
-  was 30 to 60 times slower than on the JVM. The loop now lives in
-  `LuaClosure.run`, without any `try`; `LuaClosure.execute` keeps the error
-  handling, once per Lua call.
+- **Speed**: entering a `try` block is expensive on the C edition (about
+  200 ns on the platform where it was first measured; calls made inside the
+  `try` are fast). The interpreter loop was entirely in a `try`, so each
+  instruction that calls a method paid it: the interpreter was 30 to 60 times
+  slower than on the JVM. The loop now lives in `LuaClosure.run`, without any
+  `try`; `LuaClosure.execute` keeps the error handling, once per Lua call.
 
-| TeaVM C | before | now |
-|---|---|---|
-| `fib(27)` | 5596 ms | 596 ms |
-| empty loop, per iteration | 1120 ns | 21 ns |
-| integer addition, per iteration | 2677 ns | 38 ns |
-| call of a Java function | 4941 ns | 55 ns |
-| table set/get, 1M entries | 6471 ms | 80 ms |
-| `string.format`, per call | 15565 ns | 4002 ns |
+| TeaVM C, Windows | now |
+|---|---|
+| `fib(27)` | 66 ms |
+| empty loop, per iteration | 37 ns |
+| integer addition, per iteration | 40 ns |
+| call of a Lua function | 110 ns |
+| call of a Java function (`math.abs`) | 67 ns |
+| `pcall` | 188 ns |
+| table set/get, 1M entries | 87 ms |
+| `string.format`, per call | 4.5 us |
 
-What remains: about 1 us per Lua function call and 1.5 us per `pcall` (the
-`try` of `execute`, entered once per call). This is judged good enough for
+What remains: the `try` of `execute`, entered once per Lua call (about 110 ns
+per call, 190 ns per `pcall`); `string.format` is the slowest operation
+(`NumberFormatter` and `BigDecimal`). This is judged good enough for
 diagram scripts. If a real script needs more, the way out is to remove that
 `try` too: keep the running closure and the call depth in `Globals`, and let
 `pcall` (and the host entry point) restore them instead of a `finally` in each

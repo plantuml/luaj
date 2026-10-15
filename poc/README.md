@@ -100,9 +100,10 @@ heap crashed with a bus error / segmentation fault while growing) and not
 allocation, but the **entry into a `try` block**: about 200 ns each, against a
 few ns for the calls made inside it. The interpreter loop was entirely inside
 one `try`, and the cost came from the many method calls of each instruction.
-With the loop moved out of the `try` (`LuaClosure.run`), `fib(27)` takes 0.6 s
-and a loop iteration 20 ns. What remains is about 1 µs per Lua function call
-(the `try` of `LuaClosure.execute`, entered once per call) and 1.5 µs per `pcall`.
+With the loop moved out of the `try` (`LuaClosure.run`), `fib(27)` takes 66 ms
+on Windows (MSVC, ARM64) and a loop iteration 37 ns. What remains is about
+110 ns per Lua function call (the `try` of `LuaClosure.execute`, entered once
+per call) and 190 ns per `pcall`.
 
 ## Known quirk (not related to TeaVM)
 
