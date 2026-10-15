@@ -253,10 +253,30 @@ The host provides files, rendering and arguments:
   `format`, `theme`, `args` (passed to the text Lua of that diagram).
 - `plantuml.read(path)`, `plantuml.write(path, data)`,
   `plantuml.glob(pattern)`, `plantuml.list(dir)`, `plantuml.mtime(path)`.
+  `read` and `write` are shortcuts for whole files; they are not the only way
+  to reach a file (see the `io` subset below).
 - `plantuml.args`: command line arguments of the script.
-- A way to exit with a status code, and `print` to the console. The `os` and
-  `io` libraries are removed from this library; whatever the engine flavor
-  needs is provided by `plantuml.*`.
+- `plantuml.exit(code)` to exit with a status code, and `print` to the console.
+
+The engine flavor also gets a small **`io` subset** and a small **`os`
+subset**, both provided by the host. This library has no file access of its
+own (see section 3): the host implements a minimal interface
+(`LuaFileSystem`, to be sketched) and installs the two libraries only when it
+builds the `Globals` of an engine script. **Text Lua never gets them**, so its
+sandbox does not change.
+
+- `io`: `io.open` (modes `r`, `w`, `a`, text or binary), `io.lines`,
+  `io.read`, `io.write`, `io.stdin`, `io.stdout`, `io.stderr`, and on a file
+  `read` (formats `"a"`, `"l"`, `"n"`), `write`, `lines`, `close`.
+  Not provided at first: `io.popen`, `io.tmpfile`, `file:seek`,
+  `file:setvbuf`.
+- `os`: `os.getenv`, `os.clock`, `os.time`, `os.exit`.
+
+Why not `plantuml.*` alone: standard input and output (`cat x.puml |
+plantuml script.lua`, or a script that writes a stream on stdout), reading a
+large file line by line instead of loading it whole, and Lua code that already
+exists (parsers, JSON libraries) and expects `io`. The file policy (working
+directory, allowed paths, security profile) stays in one place, the host.
 
 Examples (sketches; none of this exists yet).
 
@@ -378,7 +398,10 @@ Removed:
 - `debug` library and the hooks in the interpreter loop;
 - the command-line tools `lua.java` and `luac.java` (default package, files,
   reflection);
-- `io` and `os` libraries and every file-system access;
+- `io` and `os` libraries and every file-system access. This is the state of
+  the generic library; the engine flavor is to get an `io` and `os` subset
+  back, provided by the host through an interface (section 2.2). They will not
+  come back as direct `java.io` access;
 - `luajava`/coercion, `luajc` (bytecode generation), the JSR-223 script engine,
   the AST/parser modules, the server, obsolete examples;
 - reflection in `LibFunction.bind` (now takes a `Supplier`);
@@ -540,6 +563,11 @@ far:
   memory is not observable by scripts, so that they behave the same on the
   JVM, JavaScript and C editions.
 
+This is the rule for text Lua. Engine Lua (section 2) is the exception that
+the host asks for explicitly: it gets an `io` and `os` subset on top, backed by
+a host-provided interface, never by `java.io` inside this library. Not done
+yet.
+
 Not decided yet: `print` (where would its output go?), `require` and
 `package` (which mechanism decides what a script may include: the host's
 resource finder, or PlantUML's `!include`?), and the shared metatable of
@@ -630,6 +658,11 @@ New work:
 - `$` single-line only, `$$` blocks only, or both?
 - Engine Lua: is it worth a separate entry point (an executable that takes
   a `.lua` file), and what is its working directory and file policy?
+- Engine Lua `io`/`os`: what does the `LuaFileSystem` interface look like
+  (open, list, glob, mtime, standard streams)? Is the `io` subset above enough,
+  or do scripts need `popen` or `seek`? Does the C edition support file access
+  through the TeaVM class library (to check)? Is `plantuml.read/write` kept
+  next to `io`, or dropped?
 - Names: "text Lua" / "engine Lua" are working names. Which user-facing
   names for the two flavors?
 - Execution order for text Lua: run all Lua first and feed the generated
