@@ -523,6 +523,11 @@ New work:
   is done on the digits by the class itself. Checked on TeaVM C 0.16.0 with
   `poc/`: TeaVM's `BigDecimal.round(MathContext)` and `precision()` are wrong
   for some values, so do not use them.
+- **TeaVM C performance**: entering a `try` block costs about 200 ns (measured
+  with `poc/`), so keep `try` blocks out of hot paths and out of
+  loops that make many calls (`LuaClosure.run` has none; `execute` has one per
+  Lua call). Also set a fixed heap (`minHeapSize = maxHeapSize`): TeaVM C starts
+  with 1 MB and crashed while growing it.
 - **`.gitignore`**: the original ignored `lib/` and `*.lua`, which matched the
   Java package `org.luaj.vm2.lib` and all test scripts. It is fixed now, but
   old clones may still need `git add -f` for such files.
