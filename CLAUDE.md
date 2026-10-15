@@ -26,7 +26,7 @@ The only jar kept in the repository is the JUnit console launcher in `lib/`.
 
 ## Test baseline
 
-A clean run has **302 tests, 291 passing, 11 failing**. Compare failing test
+A clean run has **322 tests, 311 passing, 11 failing**. Compare failing test
 names, not the count. The 11 known failures:
 
 - `CompatibilityTest$JseCompatibilityTest`: `testBaseLib`, `testErrors`,

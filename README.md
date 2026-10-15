@@ -261,8 +261,8 @@ The host provides files, rendering and arguments:
 The engine flavor also gets a small **`io` subset** and a small **`os`
 subset**, both provided by the host. This library has no file access of its
 own (see section 3): the host implements a minimal interface
-(`LuaFileSystem`, to be sketched) and installs the two libraries only when it
-builds the `Globals` of an engine script. **Text Lua never gets them**, so its
+(`LuaFileSystem`: `open` and the three standard streams; `OsHost` for `os`)
+and installs the two libraries with `LuaEngine.newEngineGlobals(fs, os)`. **Text Lua never gets them**, so its
 sandbox does not change.
 
 - `io`: `io.open` (modes `r`, `w`, `a`, text or binary), `io.lines`,
@@ -658,11 +658,15 @@ New work:
 - `$` single-line only, `$$` blocks only, or both?
 - Engine Lua: is it worth a separate entry point (an executable that takes
   a `.lua` file), and what is its working directory and file policy?
-- Engine Lua `io`/`os`: what does the `LuaFileSystem` interface look like
-  (open, list, glob, mtime, standard streams)? Is the `io` subset above enough,
-  or do scripts need `popen` or `seek`? Does the C edition support file access
-  through the TeaVM class library (to check)? Is `plantuml.read/write` kept
-  next to `io`, or dropped?
+- Engine Lua `io`/`os`: `IoLib`, `OsLib`, `LuaFileSystem` (open and the three
+  standard streams), `LuaFile` (bytes) and `OsHost` exist, and
+  `LuaEngine.newEngineGlobals(fs, os)` installs them. Still open: is the `io`
+  subset enough, or do scripts need `popen` or `seek`? Does the C edition
+  support file access through the TeaVM class library, and do `IoLib` and
+  `OsLib` compile with it (not tried yet)? Is `plantuml.read/write` kept next
+  to `io`, or dropped? `os.exit` is final only if the host ends the process
+  itself (an exception thrown by the host is a Lua error that `pcall` can
+  catch): what does the engine entry point do?
 - Names: "text Lua" / "engine Lua" are working names. Which user-facing
   names for the two flavors?
 - Execution order for text Lua: run all Lua first and feed the generated

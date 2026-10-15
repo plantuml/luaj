@@ -23,7 +23,11 @@ package org.luaj.vm2;
 
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.BaseLib;
+import org.luaj.vm2.lib.IoLib;
+import org.luaj.vm2.lib.LuaFileSystem;
 import org.luaj.vm2.lib.MathLib;
+import org.luaj.vm2.lib.OsHost;
+import org.luaj.vm2.lib.OsLib;
 import org.luaj.vm2.lib.PackageLib;
 import org.luaj.vm2.lib.ResourceFinder;
 import org.luaj.vm2.lib.StringLib;
@@ -68,6 +72,28 @@ public class LuaEngine {
 		globals.load(new Utf8Lib());
 		globals.load(new MathLib());
 		LuaC.install(globals);
+		return globals;
+	}
+
+	/**
+	 * Creates the globals of an <b>engine</b> script (a script that drives
+	 * PlantUML, not one embedded in a diagram): the same libraries as
+	 * {@link #newGlobals()}, plus an {@code io} and an {@code os} subset that
+	 * go through the host. This library accesses no file by itself: what the
+	 * script can open, read and write is decided by {@code fs}, and what
+	 * {@code os} reports by {@code os}.
+	 * <p>
+	 * Text Lua must keep using {@link #newGlobals()}.
+	 * @param fs the files and standard streams of the host
+	 * @param os the operating system services of the host
+	 * @return a new {@link Globals}
+	 * @see IoLib
+	 * @see OsLib
+	 */
+	public static Globals newEngineGlobals(LuaFileSystem fs, OsHost os) {
+		Globals globals = newGlobals();
+		globals.load(new IoLib(fs));
+		globals.load(new OsLib(os));
 		return globals;
 	}
 
