@@ -34,7 +34,12 @@ those of the TeaVM Gradle plugin; if your version names them differently,
   `string.format`.
 - `-- lua <name>`: the result of each Lua script.
 - `== done, N error(s) ==`.
-- Lines starting with `#`: timings (not comparable, ignored below).
+- Lines starting with `#`: timings (not comparable, ignored below). They are
+  micro-benchmarks that isolate one cost each: Java level (allocations, boxed
+  numbers, `try/finally`, exceptions, `Varargs`), then Lua level (loops, table
+  access, calls of Lua and Java functions, closures, `pcall`, `fib` of growing
+  size to see whether the time per call grows). Compare the three editions
+  line by line to find what makes the calls slow on TeaVM C.
 
 `expected.txt` is the reference output (JVM, timings removed). The
 `NumberFormatter` part has also been checked against C `printf` (glibc) for all

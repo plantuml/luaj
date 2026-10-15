@@ -168,24 +168,125 @@ public class Main {
 	}
 
 	// ------------------------------------------------------------------
-	// 3. Timings ('#' lines: not compared)
+	// 3. Timings ('#' lines: not compared). Each one isolates one cost, to find why the
+	// calls are slow on TeaVM C.
 	// ------------------------------------------------------------------
 
-	private static void bench() {
+	/** keeps the micro-benchmarks from being optimized away */
+	private static long sink;
+
+	private static void time(String name, Runnable r) {
 		try {
-			Globals g = JsePlatform.standardGlobals();
-			LuaValue fib = g.load("local function fib(n) if n < 2 then return n end return fib(n-1) + fib(n-2) end return fib(27)", "b1");
 			long t0 = System.nanoTime();
-			LuaValue r = fib.call();
+			r.run();
 			long t1 = System.nanoTime();
-			System.out.println("# fib(27) = " + r.tojstring() + " in " + (t1 - t0) / 1000000 + " ms");
-			LuaValue fmt = g.load("local n = 0 for i = 1, 20000 do n = n + #string.format('%.3f %g', i / 7, i * 1.1) end return n", "b2");
-			t0 = System.nanoTime();
-			r = fmt.call();
-			t1 = System.nanoTime();
-			System.out.println("# 20000 x string.format = " + r.tojstring() + " in " + (t1 - t0) / 1000000 + " ms");
+			System.out.println("# " + name + ": " + (t1 - t0) / 1000000 + " ms");
 		} catch (Throwable e) {
-			System.out.println("# bench failed: " + e);
+			System.out.println("# " + name + " failed: " + e);
 		}
+	}
+
+	private static void timeLua(Globals g, String name, String code) {
+		final LuaValue f = g.load(code, name);
+		time("lua " + name, new Runnable() {
+			public void run() {
+				sink += f.call().tojstring().length();
+			}
+		});
+	}
+
+	private static void bench() {
+		System.out.println("# --- java level (no interpreter)");
+		time("java: 5M iterations, nothing", new Runnable() {
+			public void run() {
+				long x = 0;
+				for (int i = 0; i < 5000000; i++)
+					x += i;
+				sink += x;
+			}
+		});
+		time("java: 2M new Object[4]", new Runnable() {
+			public void run() {
+				long x = 0;
+				for (int i = 0; i < 2000000; i++) {
+					Object[] o = new Object[4];
+					o[0] = o;
+					x += o.length;
+				}
+				sink += x;
+			}
+		});
+		time("java: 2M LuaValue.valueOf(int) (beyond the cache)", new Runnable() {
+			public void run() {
+				long x = 0;
+				for (int i = 0; i < 2000000; i++)
+					x += LuaValue.valueOf(i + 1000).toint();
+				sink += x;
+			}
+		});
+		time("java: 2M LuaValue.valueOf(double)", new Runnable() {
+			public void run() {
+				long x = 0;
+				for (int i = 0; i < 2000000; i++)
+					x += (long) LuaValue.valueOf(i * 0.5).todouble();
+				sink += x;
+			}
+		});
+		time("java: 1M try/finally", new Runnable() {
+			public void run() {
+				long x = 0;
+				for (int i = 0; i < 1000000; i++) {
+					try {
+						x += i;
+					} finally {
+						x--;
+					}
+				}
+				sink += x;
+			}
+		});
+		time("java: 20000 throw/catch of LuaError", new Runnable() {
+			public void run() {
+				long x = 0;
+				for (int i = 0; i < 20000; i++) {
+					try {
+						throw new org.luaj.vm2.LuaError("x");
+					} catch (org.luaj.vm2.LuaError e) {
+						x++;
+					}
+				}
+				sink += x;
+			}
+		});
+		time("java: 1M varargsOf(a, b)", new Runnable() {
+			public void run() {
+				long x = 0;
+				LuaValue a = LuaValue.valueOf(1), b = LuaValue.valueOf(2);
+				for (int i = 0; i < 1000000; i++)
+					x += LuaValue.varargsOf(a, b).narg();
+				sink += x;
+			}
+		});
+
+		System.out.println("# --- lua level");
+		Globals g = JsePlatform.standardGlobals();
+		timeLua(g, "empty loop 5M", "for i = 1, 5000000 do end return 'x'");
+		timeLua(g, "int add 5M", "local x = 0 for i = 1, 5000000 do x = x + i end return x");
+		timeLua(g, "float add 2M", "local x = 0.5 for i = 1, 2000000 do x = x + 0.25 end return x");
+		timeLua(g, "table set/get 1M", "local t = {} for i = 1, 1000000 do t[i] = i end local x = 0 for i = 1, 1000000 do x = x + t[i] end return x");
+		timeLua(g, "table with string keys 500k", "local t = {a = 1, b = 2} local x = 0 for i = 1, 500000 do t.a = t.a + 1 x = x + t.b end return x");
+		timeLua(g, "300k calls of a local function f(a)", "local function f(a) return a end local x = 0 for i = 1, 300000 do x = x + f(i) end return x");
+		timeLua(g, "300k calls of a function with no argument", "local function f() end for i = 1, 300000 do f() end return 'x'");
+		timeLua(g, "300k calls of math.abs (java function)", "local abs = math.abs local x = 0 for i = 1, 300000 do x = x + abs(i) end return x");
+		timeLua(g, "300k string.sub", "local s = 'hello world' local n = 0 for i = 1, 300000 do n = n + #s:sub(2, 5) end return n");
+		timeLua(g, "100k concat", "local n = 0 for i = 1, 100000 do n = n + #('a' .. i) end return n");
+		timeLua(g, "300k closures created", "local x = 0 for i = 1, 300000 do local f = function() return i end x = x + 1 end return x");
+		timeLua(g, "100k pcall", "local n = 0 for i = 1, 100000 do if pcall(function() end) then n = n + 1 end end return n");
+		timeLua(g, "fib(20) x1", "local function fib(n) if n < 2 then return n end return fib(n-1) + fib(n-2) end return fib(20)");
+		timeLua(g, "fib(20) x1 again", "local function fib(n) if n < 2 then return n end return fib(n-1) + fib(n-2) end return fib(20)");
+		timeLua(g, "fib(24) x1", "local function fib(n) if n < 2 then return n end return fib(n-1) + fib(n-2) end return fib(24)");
+		timeLua(g, "fib(27) x1", "local function fib(n) if n < 2 then return n end return fib(n-1) + fib(n-2) end return fib(27)");
+		timeLua(g, "20000 x string.format", "local n = 0 for i = 1, 20000 do n = n + #string.format('%.3f %g', i / 7, i * 1.1) end return n");
+		System.out.println("# sink " + sink);
 	}
 }
