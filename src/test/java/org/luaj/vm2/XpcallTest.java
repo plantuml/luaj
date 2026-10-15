@@ -3,13 +3,13 @@ package org.luaj.vm2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 /** The message handler of xpcall: called for every error that reaches it, with the error value itself. */
 class XpcallTest {
 
 	private static void check(String expected, String code) {
-		LuaValue r = JsePlatform.standardGlobals().load(code, "t").call();
+		LuaValue r = LuaEngine.newGlobals().load(code, "t").call();
 		assertEquals(expected, r.tojstring(), code);
 	}
 

@@ -2,7 +2,7 @@ package org.luaj;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.luaj.vm2.Globals;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 import java.io.InputStream;
 
@@ -14,7 +14,7 @@ public class ResourcesTestCase {
 
     @BeforeEach
     protected void setUp() {
-        globals = JsePlatform.standardGlobals();
+        globals = LuaEngine.newGlobals();
     }
 
     protected void setBaseDir(String baseDir) {

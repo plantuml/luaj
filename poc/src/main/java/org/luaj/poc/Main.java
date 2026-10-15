@@ -3,7 +3,7 @@ package org.luaj.poc;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.NumberFormatter;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 /**
  * Test program for the editions of luaj: JVM, JavaScript (TeaVM) and C (TeaVM).
@@ -63,7 +63,7 @@ public class Main {
 			System.out.println(sb);
 		}
 		// the same numbers through the Lua string library
-		Globals g = JsePlatform.standardGlobals();
+		Globals g = LuaEngine.newGlobals();
 		StringBuilder sb = new StringBuilder();
 		for (double v : NUMBERS)
 			sb.append(g.load("local v = ... return string.format('%.3f|%10.2e|%-12g|%g', v, v, v, v)", "fmt").call(LuaValue.valueOf(v)).tojstring()).append('\n');
@@ -159,7 +159,7 @@ public class Main {
 	private static void run(String name, String script) {
 		System.out.println("-- lua " + name);
 		try {
-			Globals g = JsePlatform.standardGlobals();
+			Globals g = LuaEngine.newGlobals();
 			System.out.println(g.load(script, name).call().tojstring());
 		} catch (Throwable e) {
 			errors++;
@@ -289,7 +289,7 @@ public class Main {
 		});
 		time("java: call of a java function (math.abs)", N, new Runnable() {
 			public void run() {
-				LuaValue abs = JsePlatform.standardGlobals().get("math").get("abs");
+				LuaValue abs = LuaEngine.newGlobals().get("math").get("abs");
 				LuaValue v = LuaValue.valueOf(-3);
 				long x = 0;
 				for (int i = 0; i < N; i++)
@@ -366,7 +366,7 @@ public class Main {
 		});
 
 		System.out.println("# --- lua level (the same number of iterations on the three editions)");
-		Globals g = JsePlatform.standardGlobals();
+		Globals g = LuaEngine.newGlobals();
 		timeLua(g, "empty loop 300k", 300000, "for i = 1, 300000 do end return 'x'");
 		timeLua(g, "int add 300k", 300000, "local x = 0 for i = 1, 300000 do x = x + i end return x");
 		timeLua(g, "float add 300k", 300000, "local x = 0.5 for i = 1, 300000 do x = x + 0.25 end return x");

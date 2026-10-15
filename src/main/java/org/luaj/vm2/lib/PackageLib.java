@@ -50,11 +50,11 @@ import org.luaj.vm2.LuaConstant;
  * </ul>
  *
  * <h3>Loading</h3> Typically, this library is included as part of a call to
- * either {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()}
+ * either {@link org.luaj.vm2.LuaEngine#newGlobals()}
  *
  * <pre>
  *  {@code
- * Globals globals = JsePlatform.standardGlobals();
+ * Globals globals = LuaEngine.newGlobals();
  * System.out.println( globals.get("require").call"foo") );
  * }
  * </pre>
@@ -81,7 +81,7 @@ import org.luaj.vm2.LuaConstant;
  *
  * @see LibFunction
  * @see BaseLib
- * @see org.luaj.vm2.lib.jse.JsePlatform
+ * @see org.luaj.vm2.LuaEngine
  * @see <a href="http://www.lua.org/manual/5.2/manual.html#6.3">Lua 5.2 Package
  *      Lib Reference</a>
  */

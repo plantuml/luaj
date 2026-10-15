@@ -36,7 +36,7 @@ import org.luaj.vm2.LuaConstant;
  * library.
  * <p>
  * Typically, this library is included as part of a call to
- * {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()}, or loaded directly:
+ * {@link org.luaj.vm2.LuaEngine#newGlobals()}, or loaded directly:
  * <pre> {@code
  * Globals globals = new Globals();
  * globals.load(new BaseLib());

@@ -45,14 +45,14 @@ import org.luaj.vm2.compiler.LuaC;
  * String script = "print( 'hello, world' )";
  * InputStream is = new ByteArrayInputStream(script.getBytes());
  * Prototype p = LuaC.instance.compile(is, "script");
- * LuaValue globals = JsePlatform.standardGlobals();
+ * LuaValue globals = LuaEngine.newGlobals();
  * LuaClosure f = new LuaClosure(p, globals);
  * f.call();
  * }</pre>
  * <p>
  * To construct it indirectly, the {@link Globals#load(java.io.Reader, String)} method may be used:
  * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
+ * Globals globals = LuaEngine.newGlobals();
  * LuaFunction f = globals.load(new StringReader(script), "script");
  * LuaClosure c = f.checkclosure();
  * c.call();

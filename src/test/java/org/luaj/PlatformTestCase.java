@@ -3,7 +3,7 @@ package org.luaj;
 import org.junit.jupiter.api.BeforeEach;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -22,7 +22,7 @@ public class PlatformTestCase extends ResourcesTestCase {
         switch (platform) {
             default:
             case JSE:
-                globals = JsePlatform.standardGlobals();
+                globals = LuaEngine.newGlobals();
                 break;
         }
     }

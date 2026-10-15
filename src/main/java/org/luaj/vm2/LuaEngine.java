@@ -19,12 +19,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  ******************************************************************************/
-package org.luaj.vm2.lib.jse;
+package org.luaj.vm2;
 
-import org.luaj.vm2.Globals;
-import org.luaj.vm2.LoadState;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
 import org.luaj.vm2.compiler.LuaC;
 import org.luaj.vm2.lib.BaseLib;
 import org.luaj.vm2.lib.MathLib;
@@ -34,55 +30,36 @@ import org.luaj.vm2.lib.StringLib;
 import org.luaj.vm2.lib.TableLib;
 import org.luaj.vm2.lib.Utf8Lib;
 
-/** The {@link org.luaj.vm2.lib.jse.JsePlatform} class is a convenience class to standardize
- * how globals tables are initialized for the JSE platform.
+/**
+ * Entry point of the engine: creates the {@link Globals} a script runs in and
+ * runs chunks in them. It does not depend on any platform (it compiles with
+ * TeaVM), and it is the one place that decides which libraries a script sees.
  * <p>
- * It is used to allocate either a set of standard globals using
- * {@link #standardGlobals()}
- * <p>
- * A simple example of initializing globals and using them from Java is:
+ * A simple example:
  * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
- * globals.get("print").call(LuaValue.valueOf("hello, world"));
+ * Globals globals = LuaEngine.newGlobals();
+ * Varargs result = LuaEngine.run(globals, "return 1 + 2", "example");
  * } </pre>
  * <p>
- * Once globals are created, a simple way to load and run a script is:
- * <pre> {@code
- * globals.load( new FileInputStream("main.lua"), "main.lua" ).call();
- * } </pre>
+ * {@code require} needs a {@link ResourceFinder} in {@link Globals#finder};
+ * there is no file system access by default.
  * <p>
- * although {@code require} could also be used:
- * <pre> {@code
- * globals.get("require").call(LuaValue.valueOf("main"));
- * } </pre>
- * For this to succeed, set {@link Globals#finder} to a {@link ResourceFinder} that can
- * find "main.lua"; there is no file system access by default.
- * <p>
- * The standard globals will contain the standard libraries:
- * <ul>
- * <li>{@link Globals}</li>
- * <li>{@link BaseLib}</li>
- * <li>{@link PackageLib}</li>
- * <li>{@link TableLib}</li>
- * <li>{@link StringLib}</li>
- * <li>{@link MathLib}</li>
- * <li>{@link Utf8Lib}</li>
- * </ul>
- * In addition, the {@link LuaC} compiler is installed so lua files may be loaded in their source form.
- * <p>
- * The class ensures that initialization is done in the correct order.
- * 
+ * The globals contain the libraries {@link BaseLib}, {@link PackageLib},
+ * {@link TableLib}, {@link StringLib}, {@link Utf8Lib} and {@link MathLib}, and
+ * the {@link LuaC} compiler so that source chunks can be loaded.
+ *
  * @see Globals
  */
-public class JsePlatform {
+public class LuaEngine {
+
+	private LuaEngine() {
+	}
 
 	/**
-	 * Create a standard set of globals for JSE including all the libraries.
-	 * 
-	 * @return Table of globals initialized with the standard JSE libraries
-	 * @see org.luaj.vm2.lib.jse.JsePlatform
+	 * Creates a new, independent set of globals with the standard libraries.
+	 * @return a new {@link Globals}
 	 */
-	public static Globals standardGlobals() {
+	public static Globals newGlobals() {
 		Globals globals = new Globals();
 		globals.load(new BaseLib());
 		globals.load(new PackageLib());
@@ -95,14 +72,27 @@ public class JsePlatform {
 		return globals;
 	}
 
+	/**
+	 * Compiles and runs a chunk of source text in the given globals.
+	 * @param globals the globals, from {@link #newGlobals()}
+	 * @param source the Lua source
+	 * @param chunkName the name shown in error messages
+	 * @return the values returned by the chunk
+	 * @throws LuaError if the chunk does not compile or fails
+	 */
+	public static Varargs run(Globals globals, String source, String chunkName) {
+		return globals.load(source, chunkName).invoke();
+	}
 
-	/** Simple wrapper for invoking a lua function with command line arguments.
-	 * The supplied function is first given a new Globals object as its environment
-	 * then the program is run with arguments.
-	 * @return {@link Varargs} containing any values returned by mainChunk.
+	/**
+	 * Runs a main chunk with command line style arguments: they are available
+	 * as the table {@code arg} and as the {@code ...} of the chunk.
+	 * @param mainChunk the chunk
+	 * @param args the arguments
+	 * @return the values returned by the chunk
 	 */
 	public static Varargs luaMain(LuaValue mainChunk, String[] args) {
-		Globals g = standardGlobals();
+		Globals g = newGlobals();
 		int n = args.length;
 		LuaValue[] vargs = new LuaValue[args.length];
 		for (int i = 0; i < n; ++i)

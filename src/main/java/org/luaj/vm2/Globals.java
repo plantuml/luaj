@@ -41,10 +41,10 @@ import org.luaj.vm2.lib.ResourceFinder;
  * 
  * <h3>Constructing and Initializing Instances</h3>
  * Typically, this is constructed indirectly by a call to 
- * {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()}
+ * {@link org.luaj.vm2.LuaEngine#newGlobals()}
  * and then used to load lua scripts for execution as in the following example. 
  * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
+ * Globals globals = LuaEngine.newGlobals();
  * globals.load( new StringReader("print 'hello'"), "main.lua" ).call(); 
  * } </pre>
  * The creates a complete global environment with the standard libraries loaded.
@@ -85,7 +85,7 @@ import org.luaj.vm2.lib.ResourceFinder;
  * </ul>
  * 
  * <h3>Lua Environment Variables</h3>
- * When using {@link org.luaj.vm2.lib.jse.JsePlatform},
+ * When using {@link org.luaj.vm2.LuaEngine},
  * these environment variables are created within the Globals.
  * <ul>
  * <li>"_G" Pointer to this Globals.
@@ -98,7 +98,7 @@ import org.luaj.vm2.lib.ResourceFinder;
  * static immutable resources such as class data and string data.
  * <p>
  * 
- * @see org.luaj.vm2.lib.jse.JsePlatform
+ * @see org.luaj.vm2.LuaEngine
  * @see LuaValue
  * @see Compiler
  * @see Loader

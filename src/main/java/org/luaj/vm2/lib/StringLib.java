@@ -39,12 +39,12 @@ import org.luaj.vm2.LuaConstant;
  * {@code string} library.
  * <p>
  * Typically, this library is included as part of a call to either
- * {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()} or
+ * {@link org.luaj.vm2.LuaEngine#newGlobals()} or
  *
  * <pre>
  * {
  * 	&#64;code
- * 	Globals globals = JsePlatform.standardGlobals();
+ * 	Globals globals = LuaEngine.newGlobals();
  * 	System.out.println(globals.get("string").get("upper").call(LuaValue.valueOf("abcde")));
  * }
  * </pre>
@@ -66,7 +66,7 @@ import org.luaj.vm2.LuaConstant;
  * This is a direct port of the corresponding library in C.
  *
  * @see LibFunction
- * @see org.luaj.vm2.lib.jse.JsePlatform
+ * @see org.luaj.vm2.LuaEngine
  * @see <a href="http://www.lua.org/manual/5.2/manual.html#6.4">Lua 5.2 String
  *      Lib Reference</a>
  */

@@ -41,7 +41,7 @@ package org.luaj.vm2;
  * <pre>
  * {
  * 	&#64;code
- * 	LuaValue globals = JsePlatform.standardGlobals();
+ * 	LuaValue globals = LuaEngine.newGlobals();
  * 	LuaValue sqrt = globals.get("math").get("sqrt");
  * 	LuaValue print = globals.get("print");
  * 	LuaValue d = sqrt.call(a);
@@ -79,7 +79,7 @@ package org.luaj.vm2;
  * <p>
  * For this to work the file must be in the current directory, or in the class
  * path, dependening on the platform. See
- * {@link org.luaj.vm2.lib.jse.JsePlatform} and
+ * {@link org.luaj.vm2.LuaEngine} and
  * <p>
  * In general a {@link LuaError} may be thrown on any operation when the types
  * supplied to any operation are illegal from a lua perspective. Examples could
@@ -105,7 +105,7 @@ package org.luaj.vm2;
  * {@link LuaConstant.MetaTag#MOD}, {@link LuaConstant.MetaTag#UNM}, {@link LuaConstant.MetaTag#LEN}, {@link LuaConstant.MetaTag#EQ}, {@link LuaConstant.MetaTag#LT},
  * {@link LuaConstant.MetaTag#LE}, {@link LuaConstant.MetaTag#TOSTRING}, and {@link LuaConstant.MetaTag#CONCAT}.
  *
- * @see org.luaj.vm2.lib.jse.JsePlatform
+ * @see org.luaj.vm2.LuaEngine
  * @see LoadState
  * @see Varargs
  */

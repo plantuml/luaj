@@ -6,12 +6,12 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 class StringFormatTest {
 
 	private LuaValue eval(String code) {
-		return JsePlatform.standardGlobals().load(code, "t").call();
+		return LuaEngine.newGlobals().load(code, "t").call();
 	}
 
 	@Test

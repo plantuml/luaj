@@ -3,7 +3,7 @@ package org.luaj.vm2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 /**
  * Numbers like the reference Lua 5.3, with one difference: integers have 32 bits and wrap around.
@@ -13,7 +13,7 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 class Lua53NumbersTest {
 
 	private static String eval(String code) {
-		return JsePlatform.standardGlobals().load(code, "t").call().tojstring();
+		return LuaEngine.newGlobals().load(code, "t").call().tojstring();
 	}
 
 	private static void check(String expected, String expression) {

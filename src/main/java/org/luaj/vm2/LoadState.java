@@ -40,14 +40,14 @@ import org.luaj.vm2.compiler.DumpState;
 * The canonical method to load and execute code is done
 * indirectly using the Globals:
 * <pre> {@code
-* Globals globals = JsePlatform.standardGlobals();
+* Globals globals = LuaEngine.newGlobals();
 * LuaValue chunk = globasl.load("print('hello, world')", "main.lua");
 * chunk.call();
 * } </pre>
 * This should work regardless of which {@link Globals.Compiler} or {@link Globals.Undumper}
 * have been installed.
 * <p>
-* By default, when using {@link org.luaj.vm2.lib.jse.JsePlatform} or
+* By default, when using {@link org.luaj.vm2.LuaEngine} or
 * to construct globals, the {@link LoadState} default undumper is installed
 * as the default {@link Globals.Undumper}.
 * <p>
@@ -55,7 +55,7 @@ import org.luaj.vm2.compiler.DumpState;
 * A lua binary file is created via the {@link DumpState} class
 :
 * <pre> {@code
-* Globals globals = JsePlatform.standardGlobals();
+* Globals globals = LuaEngine.newGlobals();
 * Prototype p = globals.compilePrototype(new StringReader("print('hello, world')"), "main.lua");
 * ByteArrayOutputStream o = new ByteArrayOutputStream();
 * org.luaj.vm2.compiler.DumpState.dump(p, o, false);

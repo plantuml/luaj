@@ -34,7 +34,7 @@ import org.luaj.vm2.compiler.LuaC;
  * Generally, the {@link Prototype} is not constructed directly is an intermediate result
  * as lua code is loaded using {@link Globals#load(java.io.Reader, String)}:
  * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
+ * Globals globals = LuaEngine.newGlobals();
  * globals.load( new StringReader("print 'hello'"), "main.lua" ).call(); 
  * } </pre>
  * 
@@ -66,7 +66,7 @@ import org.luaj.vm2.compiler.LuaC;
  * To execute the code represented by the {@link Prototype} it must be supplied to 
  * the constructor of a {@link LuaClosure}:
  * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
+ * Globals globals = LuaEngine.newGlobals();
  * LuaClosure f = new LuaClosure(p, globals);
  * f.call();
  * }</pre> 

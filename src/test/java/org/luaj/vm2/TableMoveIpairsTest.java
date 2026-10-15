@@ -3,13 +3,13 @@ package org.luaj.vm2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 /** table.move and the Lua 5.3 ipairs (honors __index, no __ipairs). */
 class TableMoveIpairsTest {
 
 	private static String eval(String code) {
-		return JsePlatform.standardGlobals().load(code, "t").call().tojstring();
+		return LuaEngine.newGlobals().load(code, "t").call().tojstring();
 	}
 
 	private static void check(String expected, String code) {

@@ -35,7 +35,7 @@ import org.luaj.vm2.Globals;
  * <p>
  * @see BaseLib
  * @see Globals#finder
- * @see org.luaj.vm2.lib.jse.JsePlatform 
+ * @see org.luaj.vm2.LuaEngine 
  */
 public interface ResourceFinder {
 	

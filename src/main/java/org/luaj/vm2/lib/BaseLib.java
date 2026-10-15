@@ -40,12 +40,12 @@ import org.luaj.vm2.LuaConstant;
  * The default loader chain in {@link PackageLib} will use it as well.
  * <p>
  * Typically, this library is included as part of a call to either
- * {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()} or
+ * {@link org.luaj.vm2.LuaEngine#newGlobals()} or
  *
  * <pre>
  * {
  * 	&#64;code
- * 	Globals globals = JsePlatform.standardGlobals();
+ * 	Globals globals = LuaEngine.newGlobals();
  * 	globals.get("print").call(LuaValue.valueOf("hello, world"));
  * }
  * </pre>
@@ -71,7 +71,7 @@ import org.luaj.vm2.LuaConstant;
  * @see ResourceFinder
  * @see Globals#finder
  * @see LibFunction
- * @see org.luaj.vm2.lib.jse.JsePlatform
+ * @see org.luaj.vm2.LuaEngine
  * @see <a href="http://www.lua.org/manual/5.2/manual.html#6.1">Lua 5.2 Base Lib
  *      Reference</a>
  */

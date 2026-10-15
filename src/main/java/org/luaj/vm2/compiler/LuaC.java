@@ -49,11 +49,11 @@ import org.luaj.vm2.Globals;
  *  
  * <p> 
  * The {@link LuaC} compiler is installed by default by the
- * {@link org.luaj.vm2.lib.jse.JsePlatform} class,
+ * {@link org.luaj.vm2.LuaEngine} class,
  * so in the following example, the default {@link LuaC} compiler 
  * will be used:
  * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
+ * Globals globals = LuaEngine.newGlobals();
  * globals.load(new StringReader("print 'hello'"), "main.lua" ).call();
  * } </pre>
  * 
@@ -65,7 +65,7 @@ import org.luaj.vm2.Globals;
  * @see #install(Globals)
  * @see Globals#compiler
  * @see Globals#loader
- * @see org.luaj.vm2.lib.jse.JsePlatform
+ * @see org.luaj.vm2.LuaEngine
  * @see BaseLib
  * @see LuaValue
  * @see Prototype

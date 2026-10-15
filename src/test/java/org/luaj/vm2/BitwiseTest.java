@@ -3,13 +3,13 @@ package org.luaj.vm2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 /** Bitwise operators on 32-bit integers: &amp; | ~ (xor) ~ (not) &lt;&lt; &gt;&gt;, as in Lua 5.3 but on 32 bits. */
 class BitwiseTest {
 
 	private static String eval(String code) {
-		return JsePlatform.standardGlobals().load(code, "t").call().tojstring();
+		return LuaEngine.newGlobals().load(code, "t").call().tojstring();
 	}
 
 	/** the values of the expressions, separated by spaces */

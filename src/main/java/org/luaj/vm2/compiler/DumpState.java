@@ -39,7 +39,7 @@ import org.luaj.vm2.Globals;
  * <p>
  * A lua binary file is created via {@link DumpState#dump}:
  * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
+ * Globals globals = LuaEngine.newGlobals();
  * Prototype p = globals.compilePrototype(new StringReader("print('hello, world')"), "main.lua");
  * ByteArrayOutputStream o = new ByteArrayOutputStream();
  * DumpState.dump(p, o, false);

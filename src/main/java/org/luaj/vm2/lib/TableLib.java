@@ -32,9 +32,9 @@ import org.luaj.vm2.LuaConstant;
  * 
  * <p>
  * Typically, this library is included as part of a call to either
- * {@link org.luaj.vm2.lib.jse.JsePlatform#standardGlobals()}
+ * {@link org.luaj.vm2.LuaEngine#newGlobals()}
  * <pre> {@code
- * Globals globals = JsePlatform.standardGlobals();
+ * Globals globals = LuaEngine.newGlobals();
  * System.out.println( globals.get("table").get("length").call( LuaValue.tableOf() ) );
  * } </pre>
  * <p>
@@ -50,7 +50,7 @@ import org.luaj.vm2.LuaConstant;
  * <p>
  * This has been implemented to match as closely as possible the behavior in the corresponding library in C.
  * @see LibFunction
- * @see org.luaj.vm2.lib.jse.JsePlatform
+ * @see org.luaj.vm2.LuaEngine
  * @see <a href="http://www.lua.org/manual/5.2/manual.html#6.5">Lua 5.2 Table Lib Reference</a>
  */
 public class TableLib extends TwoArgFunction {

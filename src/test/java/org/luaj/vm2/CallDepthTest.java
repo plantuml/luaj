@@ -3,12 +3,12 @@ package org.luaj.vm2;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import org.luaj.vm2.lib.jse.JsePlatform;
+import org.luaj.vm2.LuaEngine;
 
 class CallDepthTest {
 
 	private Globals globals() {
-		return JsePlatform.standardGlobals();
+		return LuaEngine.newGlobals();
 	}
 
 	@Test
