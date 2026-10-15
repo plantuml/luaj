@@ -78,6 +78,16 @@ rounding), any `ERROR in ...` line, a crash on the `stack overflow` script
 (deep recursion on the native stack), and the `#` timings for the three
 editions (`fib(27)` and 20000 `string.format`).
 
+## Findings
+
+First run of the C edition (TeaVM 0.16.0): everything matched the JVM except
+three `NumberFormatter` lines, all caused by TeaVM's `BigDecimal`
+(`round(MathContext)`/`precision()` wrong for 1.5 with one digit, 1e16 with 16
+digits, 1e23 with 16 digits). `NumberFormatter` now rounds the digits itself and
+only uses `new BigDecimal(double).toPlainString()` (exact expansion, which was
+correct); `NumberFormatterTest` checks it against the JVM's `BigDecimal` on
+20000 random values.
+
 ## Known quirk (not related to TeaVM)
 
 `xpcall` does not call its message handler for `error("msg", 0)`; it does for
