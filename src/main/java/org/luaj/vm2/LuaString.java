@@ -747,19 +747,31 @@ public class LuaString extends LuaValue {
 		return Double.isNaN(d)? LuaConstant.NIL: valueOf(d);
 	}
 	
+	/** Same set of white space characters as the C function isspace in the "C" locale. */
+	private static boolean isspace(byte b) {
+		return b==' ' || (b>=9 && b<=13);
+	}
+
 	/**
-	 * Convert to a number in base 10, or base 16 if the string starts with '0x',
-	 * or return Double.NaN if it cannot be converted to a number.
+	 * Convert to a number in base 10, or base 16 if the string starts with '0x'
+	 * (after an optional sign), or return Double.NaN if it cannot be converted to a number.
+	 * Leading and trailing white space is ignored, hexadecimal floats such as 0x1.8p3 are accepted.
 	 * @return double value if conversion is valid, or Double.NaN if not
 	 */
 	public double scannumber() {
 		int i=m_offset,j=m_offset+m_length;
-		while ( i<j && m_bytes[i]==' ' ) ++i;
-		while ( i<j && m_bytes[j-1]==' ' ) --j;
+		while ( i<j && isspace(m_bytes[i]) ) ++i;
+		while ( i<j && isspace(m_bytes[j-1]) ) --j;
 		if ( i>=j )
 			return Double.NaN;
-		if ( m_bytes[i]=='0' && i+1<j && (m_bytes[i+1]=='x'||m_bytes[i+1]=='X'))
-			return scanlong(16, i+2, j);
+		int k = i;
+		boolean neg = m_bytes[k]=='-';
+		if ( neg || m_bytes[k]=='+' )
+			++k;
+		if ( k+1<j && m_bytes[k]=='0' && (m_bytes[k+1]=='x'||m_bytes[k+1]=='X') ) {
+			double h = scanhex(k+2, j);
+			return neg? -h: h; // -NaN is still NaN
+		}
 		double l = scanlong(10, i, j);
 		return Double.isNaN(l)? scandouble(i,j): l;
 	}
@@ -773,15 +785,17 @@ public class LuaString extends LuaValue {
 		if ( base < 2 || base > 36 )
 			return Double.NaN;
 		int i=m_offset,j=m_offset+m_length;
-		while ( i<j && m_bytes[i]==' ' ) ++i;
-		while ( i<j && m_bytes[j-1]==' ' ) --j;
+		while ( i<j && isspace(m_bytes[i]) ) ++i;
+		while ( i<j && isspace(m_bytes[j-1]) ) --j;
 		if ( i>=j )
 			return Double.NaN;
 		return scanlong( base, i, j );
 	}
 	
 	/**
-	 * Scan and convert a long value, or return Double.NaN if not found.
+	 * Scan and convert an integer value with an optional sign, or return Double.NaN
+	 * if the text is not made of at least one digit of the base, or if the value
+	 * does not fit in a long.
 	 * @param base the base to use, such as 10
 	 * @param start the index to start searching from
 	 * @param end the first index beyond the search range
@@ -790,17 +804,74 @@ public class LuaString extends LuaValue {
 	 */
 	private double scanlong( int base, int start, int end ) {
 		long x = 0;
-		boolean neg = (m_bytes[start] == '-');
-		for ( int i=(neg?start+1:start); i<end; i++ ) {
+		boolean neg = start<end && m_bytes[start] == '-';
+		int first = start<end && (neg || m_bytes[start] == '+')? start+1: start;
+		if ( first >= end )
+			return Double.NaN; // no digit at all
+		for ( int i=first; i<end; i++ ) {
 			int digit = m_bytes[i] - (base<=10||(m_bytes[i]>='0'&&m_bytes[i]<='9')? '0':
 					m_bytes[i]>='A'&&m_bytes[i]<='Z'? ('A'-10): ('a'-10));
 			if ( digit < 0 || digit >= base )
 				return Double.NaN;
-			x = x * base + digit;
-			if ( x < 0 )
+			if ( x > (Long.MAX_VALUE - digit) / base )
 				return Double.NaN; // overflow
+			x = x * base + digit;
 		}
 		return neg? -x: x;
+	}
+	
+	/**
+	 * Scan the part of an hexadecimal number that follows 0x: hexadecimal digits with an
+	 * optional point, then an optional binary exponent (p or P, a sign and decimal digits).
+	 * @param start the index to start searching from
+	 * @param end the first index beyond the search range
+	 * @return the value (without sign), or Double.NaN if the text is not valid
+	 */
+	private double scanhex( int start, int end ) {
+		double r = 0;
+		int exp = 0;
+		boolean any = false, dot = false;
+		int i = start;
+		for ( ; i<end; i++ ) {
+			int c = m_bytes[i];
+			if ( c == '.' ) {
+				if ( dot )
+					return Double.NaN;
+				dot = true;
+				continue;
+			}
+			int d = c>='0'&&c<='9'? c-'0': c>='a'&&c<='f'? c-'a'+10: c>='A'&&c<='F'? c-'A'+10: -1;
+			if ( d < 0 )
+				break;
+			any = true;
+			r = r * 16 + d;
+			if ( dot )
+				exp -= 4;
+		}
+		if ( !any )
+			return Double.NaN;
+		if ( i < end ) {
+			if ( m_bytes[i] != 'p' && m_bytes[i] != 'P' )
+				return Double.NaN;
+			i++;
+			boolean eneg = false;
+			if ( i<end && (m_bytes[i]=='+' || m_bytes[i]=='-') ) {
+				eneg = m_bytes[i] == '-';
+				i++;
+			}
+			if ( i >= end )
+				return Double.NaN;
+			int e = 0;
+			for ( ; i<end; i++ ) {
+				int c = m_bytes[i];
+				if ( c < '0' || c > '9' )
+					return Double.NaN;
+				if ( e < 100000 )
+					e = e * 10 + (c - '0');
+			}
+			exp += eneg? -e: e;
+		}
+		return exp == 0? r: r * Math.pow(2, exp);
 	}
 	
 	/**
@@ -811,7 +882,6 @@ public class LuaString extends LuaValue {
 	 * or Double.NaN if not
 	 */
 	private double scandouble(int start, int end) {
-		if ( end>start+64 ) end=start+64;
 		for ( int i=start; i<end; i++ ) {
 			switch ( m_bytes[i] ) {
 			case '-':

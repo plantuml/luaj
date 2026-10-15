@@ -392,7 +392,14 @@ Added or changed:
   `loadfile` go through the `Globals.finder` (`ResourceFinder`) installed by
   the host.
 - **Java 11** is the language level (shared with the TeaVM builds).
-- Tests: 202 of 213 pass; the 11 failures are known and pre-existing (see
+- **Lua 5.2 conformance fixes** (`Lua52CompatibilityTest`): numbers are
+  converted to strings like the reference `"%.14g"` (`NumberFormatter`, exact
+  and identical on every edition, no `Double.toString`); `tonumber` accepts
+  what C does (white space, signs, hexadecimal floats) and returns `nil`
+  instead of failing on `0x`; `string.format("%s")` honors `__tostring` and
+  accepts any value, and `%5s`, `%-5s`, `%.3s`, `%5c` apply width and
+  precision; `1/-0.0` is `-inf`; `_VERSION` is `"Lua 5.2"`.
+- Tests: 214 of 225 pass; the 11 failures are known and pre-existing (see
   below).
 
 Runtime dependencies: none (JDK only). Test dependency: JUnit 5.
@@ -438,8 +445,10 @@ New work:
 
 - **Numbers**: Lua 5.2 numeric model. Integers are 32-bit `int` internally
   with automatic promotion to `double`; there are no 64-bit integers.
-  `-0.0` is read as integer `0`, so `string.format("%f", -0.0)` prints
-  `0.000000`.
+  The literal `-0.0` is read as integer `0` (and constant folding does not
+  keep a negative zero), so `string.format("%f", -0.0)` prints `0.000000`. A
+  negative zero computed at run time (`0 * -1.5`) is kept. Not implemented:
+  `string.format("%a")`.
 - **`StackOverflowError` cannot be caught on TeaVM/C**; only the explicit
   `maxCallDepth` protects. The parser has its own nesting limit (`LexState`).
   The depth is counted per `LuaClosure.execute`; Java frames in between

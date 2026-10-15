@@ -76,7 +76,8 @@ public class LuaDouble extends LuaNumber {
 
 	public static LuaNumber valueOf(double d) {
 		int id = (int) d;
-		return d==id? (LuaNumber) LuaInteger.valueOf(id): (LuaNumber) new LuaDouble(d);
+		// negative zero must stay a double: as the integer 0 it would lose its sign
+		return d==id && !(id==0 && 1/d<0)? (LuaNumber) LuaInteger.valueOf(id): (LuaNumber) new LuaDouble(d);
 	}
 	
 	/** Don't allow ints to be boxed by DoubleValues  */
@@ -156,7 +157,7 @@ public class LuaDouble extends LuaNumber {
 	 * @see #ddiv_d(double, double)
 	 */
 	public static LuaValue ddiv(double lhs, double rhs) {
-		return rhs!=0? valueOf( lhs / rhs ): lhs>0? POSINF: lhs==0? NAN: NEGINF;
+		return valueOf( lhs / rhs ); // IEEE 754: the sign of a zero divisor is honored
 	}
 	
 	/** Divide two double numbers according to lua math, and return a double result.
@@ -166,7 +167,7 @@ public class LuaDouble extends LuaNumber {
 	 * @see #ddiv(double, double)
 	 */
 	public static double ddiv_d(double lhs, double rhs) {
-		return rhs!=0? lhs / rhs: lhs>0? Double.POSITIVE_INFINITY: lhs==0? Double.NaN: Double.NEGATIVE_INFINITY;
+		return lhs / rhs;
 	}
 	
 	/** Take modulo double numbers according to lua math, and return a {@link LuaValue} result.
@@ -235,20 +236,7 @@ public class LuaDouble extends LuaNumber {
 	public int strcmp( LuaString rhs )      { typeError("attempt to compare number with string"); return 0; }
 			
 	public String tojstring() {
-		/*
-		if ( v == 0.0 ) { // never occurs in J2me
-			long bits = Double.doubleToLongBits( v );
-			return ( bits >> 63 == 0 ) ? "0" : "-0";
-		}
-		*/
-		long l = (long) v;
-		if ( l == v )
-			return Long.toString(l);
-		if ( Double.isNaN(v) )
-			return JSTR_NAN;
-		if ( Double.isInfinite(v) )
-			return (v<0? JSTR_NEGINF: JSTR_POSINF);
-		return Float.toString((float)v);
+		return NumberFormatter.tostring(v);
 	}
 	
 	public LuaString strvalue() {
