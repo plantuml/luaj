@@ -84,6 +84,95 @@ $ end
 @enduml
 ```
 
+### Procedures
+
+In the current preprocessor a *function* returns a value, while a
+*procedure* emits PlantUML lines:
+
+```plantuml
+@startuml
+!procedure service($name, $color)
+  participant $name $color
+  note right of $name : $name is up
+!endprocedure
+
+service("Auth", "#FFCCCC")
+service("Billing", "#CCE5FF")
+@enduml
+```
+
+Two candidate replacements. Both are drafts.
+
+**A. Plain Lua function calling an `emit()` primitive.** Nothing new in the
+syntax; the function body is ordinary Lua, and `emit` appends a line to the
+generated text.
+
+```plantuml
+@startuml
+$ function service(name, color)
+$   emit("participant " .. name .. " " .. color)
+$   emit("note right of " .. name .. " : " .. name .. " is up")
+$ end
+
+$ service("Auth", "#FFCCCC")
+$ service("Billing", "#CCE5FF")
+@enduml
+```
+
+The same with a `$$` block, which keeps long bodies readable:
+
+```plantuml
+@startuml
+$$
+function service(name, color)
+  emit("participant " .. name .. " " .. color)
+  emit("note right of " .. name .. " : " .. name .. " is up")
+end
+$$
+
+$ service("Auth", "#FFCCCC")
+$ service("Billing", "#CCE5FF")
+@enduml
+```
+
+**B. `$ procedure` / `$ end`: a body made of PlantUML lines.** Lines without
+the `$` prefix are emitted (with `${}` interpolation), lines with `$` are Lua.
+This is the closest to `!procedure`, and it makes the difference between a
+function (returns a value) and a procedure (emits text) visible in the syntax:
+
+```plantuml
+@startuml
+$ procedure service(name, color)
+participant ${name} ${color}
+note right of ${name} : ${name} is up
+$ end
+
+$ service("Auth", "#FFCCCC")
+$ service("Billing", "#CCE5FF")
+@enduml
+```
+
+A procedure may mix both kinds of lines, call other procedures and loop:
+
+```plantuml
+@startuml
+$ procedure stack(names)
+$   for i, n in ipairs(names) do
+participant ${n}
+$     if i > 1 then
+${names[i - 1]} -> ${n}
+$     end
+$   end
+$ end
+
+$ stack({ "Web", "API", "DB" })
+@enduml
+```
+
+Compared with `!procedure`: arguments are real Lua values (numbers, tables,
+booleans) rather than text, so no `$name` substitution rules and no quoting
+problems; recursion is allowed (up to `maxCallDepth`).
+
 Driving PlantUML from Lua (a `puml.*` API) is not designed yet.
 
 ## 2. Where we are
@@ -186,6 +275,10 @@ New work:
   (`!include`, `!theme`, variables)? Do both coexist in one diagram, and in
   which order are they evaluated?
 - `$` single-line only, `$$` blocks only, or both?
+- Procedures: explicit `emit()` (A), a `$ procedure` whose body is PlantUML
+  text (B), or both? In B, how does a body line know its indentation and
+  how are `$` lines inside a procedure that is itself called from a `$`
+  line ordered with the emitted text?
 - How are `${expr}` values escaped when they contain PlantUML syntax?
 - Do Lua scripts share one global state across `!include`d files?
 - What does `require` resolve against (stdlib resources, URLs, the `!include`
