@@ -7,9 +7,7 @@ version = '0.1.0-SNAPSHOT'
 
 sourceSets {
     main {
-        java {
-            srcDirs = ['src/core/java', 'src/jse/java']
-        }
+        java { srcDirs = ['src/main/java'] }
     }
     test {
         java { srcDirs = ['src/test/java'] }
