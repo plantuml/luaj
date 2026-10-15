@@ -19,3 +19,6 @@
 *.tar
 *.gz
 !/gradle/wrapper/gradle-wrapper.jar
+
+# Test runner used by build.xml (Ant has no network access in the sandbox)
+!/lib/junit-platform-console-standalone-*.jar

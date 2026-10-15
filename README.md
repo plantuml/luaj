@@ -407,8 +407,9 @@ Cleaning:
 - `lua.java` and `luac.java` (command-line tools) still use `System.*`,
   `Class.forName(...).newInstance()` and files. Move them to tests/tools or
   delete them.
-- Merge the `core` and `jse` source directories; `JsePlatform` is the only
-  piece that really belongs to "the platform". Rename it.
+- The `core` and `jse` source directories are merged (`src/main/java`).
+  `JsePlatform` is the only piece that really belongs to "the platform":
+  rename it.
 - `string.dump`, `load` of binary chunks, `LoadState`/`DumpState`: do we keep
   precompiled chunks? They are a sandbox risk and dead weight.
 - `dofile`, `loadfile`, `collectgarbage`, `print` (writes to a `PrintStream`):
@@ -495,3 +496,13 @@ New work:
 ```
 
 Requires JDK 11 or later (the build uses `--release 11`).
+
+Without network access (Gradle cannot download its distribution), use Ant:
+
+```
+ant test
+```
+
+`build.xml` compiles `src/main/java` and `src/test/java`, copies the test
+resources and runs the JUnit 5 tests with the console launcher in `lib/`.
+Expect the 12 known failures listed in `CLAUDE.md`.

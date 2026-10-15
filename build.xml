@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Ant build for luaj (PlantUML edition).
+
+  Works offline from a plain checkout: the only dependency is the JUnit console
+  launcher in lib/ (one jar holding JUnit Jupiter and the platform launcher).
+  Gradle remains the reference build; this file exists for environments where
+  Gradle cannot download its distribution (sandboxes without network access).
+
+    ant            compile + jar
+    ant test       compile + run the JUnit 5 tests
+    ant clean
+-->
+<project name="luaj" default="jar" basedir=".">
+
+	<property name="src.main" value="src/main/java"/>
+	<property name="src.test" value="src/test/java"/>
+	<property name="res.test" value="src/test/resources"/>
+
+	<property name="build.dir" value="build"/>
+	<property name="classes.main" value="${build.dir}/classes/main"/>
+	<property name="classes.test" value="${build.dir}/classes/test"/>
+	<property name="test.cwd" value="${build.dir}/test-run"/>
+	<property name="jar.file" value="${build.dir}/luaj.jar"/>
+
+	<!-- Java 11 is the baseline shared with the TeaVM (JS and C) builds. -->
+	<property name="java.release" value="11"/>
+
+	<property name="junit.console" value="lib/junit-platform-console-standalone-1.10.1.jar"/>
+
+	<target name="clean">
+		<delete dir="${build.dir}"/>
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${classes.main}"/>
+		<javac srcdir="${src.main}" destdir="${classes.main}" release="${java.release}"
+		       encoding="UTF-8" includeantruntime="false" debug="true"/>
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar destfile="${jar.file}" basedir="${classes.main}"/>
+	</target>
+
+	<target name="compile-tests" depends="compile">
+		<mkdir dir="${classes.test}"/>
+		<javac srcdir="${src.test}" destdir="${classes.test}" release="${java.release}"
+		       encoding="UTF-8" includeantruntime="false" debug="true">
+			<classpath>
+				<pathelement location="${classes.main}"/>
+				<pathelement location="${junit.console}"/>
+			</classpath>
+		</javac>
+		<!-- The tests load their scripts through the class loader. -->
+		<copy todir="${classes.test}">
+			<fileset dir="${res.test}"/>
+		</copy>
+	</target>
+
+	<!--
+	  Runs from build/test-run so the .out files some tests write on a mismatch
+	  do not land in the source tree. The launcher's exit code is not turned
+	  into a build failure: the suite has known failures (see README, section 4);
+	  compare the failing test names against that baseline, not the count.
+	-->
+	<target name="test" depends="compile-tests">
+		<mkdir dir="${test.cwd}"/>
+		<java jar="${junit.console}" fork="true" dir="${test.cwd}" failonerror="false"
+		      resultproperty="test.exit">
+			<jvmarg value="-ea"/>
+			<arg value="execute"/>
+			<arg value="--class-path"/>
+			<arg value="${basedir}/${classes.main}${path.separator}${basedir}/${classes.test}"/>
+			<arg value="--scan-classpath"/>
+			<arg value="${basedir}/${classes.test}"/>
+			<arg value="--details=summary"/>
+			<arg value="--disable-banner"/>
+		</java>
+		<echo message="JUnit launcher exit code: ${test.exit} (0 = all green)"/>
+	</target>
+
+</project>
