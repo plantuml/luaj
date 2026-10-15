@@ -306,6 +306,30 @@ public class Main {
 				sink += x;
 			}
 		});
+		time("java: LuaValue.valueOf(int) called inside one try/catch", N, new Runnable() {
+			public void run() {
+				long x = 0;
+				try {
+					for (int i = 0; i < N; i++)
+						x += LuaValue.valueOf(i + 1000).toint();
+				} catch (RuntimeException e) {
+					x = -1;
+				}
+				sink += x;
+			}
+		});
+		time("java: LuaValue.valueOf(int) called inside one try/finally", N, new Runnable() {
+			public void run() {
+				long x = 0;
+				try {
+					for (int i = 0; i < N; i++)
+						x += LuaValue.valueOf(i + 1000).toint();
+				} finally {
+					sink++;
+				}
+				sink += x;
+			}
+		});
 		time("java: a loop inside one try/catch, with a switch", N, new Runnable() {
 			public void run() {
 				int[] code = { 1, 2, 3, 0, 1, 2, 3, 0 };
