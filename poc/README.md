@@ -20,8 +20,9 @@ wrapper of the parent (from this `poc` directory):
 ../gradlew generateC
 ```
 
-The TeaVM version is `0.11.0`; change it in the `plugins` block of
-`build.gradle.kts`.
+The TeaVM version is `0.16.0` (the one of the PlantUML build); change it in the
+`plugins` block of `build.gradle.kts`. Gradle must run on JDK 17 or later
+(TeaVM requirement); the bytecode stays Java 11.
 The task names and the output folders (under `build/generated/teavm/`) are
 those of the TeaVM Gradle plugin; if your version names them differently,
 `../gradlew tasks --all | grep -i generate` lists them.
@@ -52,16 +53,20 @@ JavaScript (Node.js; `generateJavaScript` writes `luaj-poc.js`, which prints
 with `console.log`):
 
 ```
-node build/generated/teavm/js/luaj-poc.js > build/js-raw.txt
+node -e "require('./build/generated/teavm/js/luaj-poc.js').main([])" > build/js-raw.txt
 grep -v '^#' build/js-raw.txt | diff expected.txt -
 ```
 
-C: compile the files of `build/generated/teavm/c` with your C compiler (the
-generator also writes a `CMakeLists.txt`), run the executable and compare in
-the same way:
+C: `generateC` writes the C sources in `build/generated/teavm/c` and a
+Gradle task then copies `CMakeLists.txt` (from this directory) next to them.
+Build with CMake (Windows: MSVC or clang-cl, add `-A ARM64` or `-A x64`), the
+executable is `bin/poc-c` under that directory:
 
 ```
-luaj-poc > build/c-raw.txt
+../gradlew generateC
+cmake -S build/generated/teavm/c -B build/c-build
+cmake --build build/c-build --config Release
+build/generated/teavm/c/bin/poc-c > build/c-raw.txt
 grep -v '^#' build/c-raw.txt | diff expected.txt -
 ```
 

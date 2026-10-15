@@ -8,7 +8,7 @@
 plugins {
     java
     application
-    id("org.teavm") version "0.11.0" // change here to try another TeaVM version
+    id("org.teavm") version "0.16.0" // same version as the PlantUML build
 }
 
 repositories {
@@ -43,14 +43,50 @@ application {
 }
 
 teavm {
-    all {
-        mainClass.set(pocMain)
-    }
     js {
+        mainClass.set(pocMain)
         targetFileName.set("luaj-poc.js")
+        moduleType.set(org.teavm.gradle.api.JSModuleType.COMMON_JS)
+        obfuscated.set(false)
     }
     c {
-        // default options; the generated files are in build/generated/teavm/c
+        mainClass.set(pocMain)
+        obfuscated.set(false)
+        shortFileNames.set(false)
+        // same setting as the PlantUML build (AGGRESSIVE is the default of TeaVM C)
+        optimization.set(org.teavm.gradle.api.OptimizationLevel.BALANCED)
+        // Heap size in MB
+        maxHeapSize.set(64)
+        // outputDir defaults to build/generated/teavm/c
+    }
+}
+
+// TeaVM only writes the C sources: add a CMakeLists.txt next to them so the
+// native build is just "cmake + build" (the executable is bin/poc-c).
+val copyCMakeLists = tasks.register<Copy>("copyCMakeLists") {
+    from("CMakeLists.txt")
+    into(layout.buildDirectory.dir("generated/teavm/c"))
+}
+tasks.matching { it.name == "generateC" }.configureEach {
+    finalizedBy(copyCMakeLists)
+}
+copyCMakeLists.configure {
+    mustRunAfter("generateC")
+}
+
+// teavm-classlib 0.15+ is published for JVM 17+ only and the TeaVM plugin adds it to
+// compileClasspath: with --release 11 Gradle refuses to resolve it. The sources never
+// need it (only the TeaVM compiler does, with its own classpath).
+configurations.compileClasspath {
+    exclude(group = "org.teavm", module = "teavm-classlib")
+}
+
+// TeaVM 0.15+ must RUN on Java 17+ (the bytecode stays Java 11).
+tasks.matching { it.name == "generateJavaScript" || it.name == "generateC" }.configureEach {
+    doFirst {
+        check(JavaVersion.current() >= JavaVersion.VERSION_17) {
+            "TeaVM requires running Gradle on JDK 17+ (current: ${JavaVersion.current()})."
+        }
     }
 }
 
