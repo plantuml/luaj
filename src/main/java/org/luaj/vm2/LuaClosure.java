@@ -291,6 +291,30 @@ public class LuaClosure extends LuaFunction {
 					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).idiv((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
 					continue;
 					
+				case Lua.OP_BAND: /*	A B C	R(A):= RK(B) & RK(C)				*/
+					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).band((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
+					continue;
+					
+				case Lua.OP_BOR: /*	A B C	R(A):= RK(B) | RK(C)				*/
+					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).bor((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
+					continue;
+					
+				case Lua.OP_BXOR: /*	A B C	R(A):= RK(B) ~ RK(C)				*/
+					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).bxor((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
+					continue;
+					
+				case Lua.OP_SHL: /*	A B C	R(A):= RK(B) << RK(C)				*/
+					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).shl((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
+					continue;
+					
+				case Lua.OP_SHR: /*	A B C	R(A):= RK(B) >> RK(C)				*/
+					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).shr((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
+					continue;
+					
+				case Lua.OP_BNOT: /*	A B	R(A):= ~R(B)					*/
+					stack[a] = stack[i>>>23].bnot();
+					continue;
+					
 				case Lua.OP_POW: /*	A B C	R(A):= RK(B) ^ RK(C)				*/
 					stack[a] = ((b=i>>>23)>0xff? k[b&0x0ff]: stack[b]).pow((c=(i>>14)&0x1ff)>0xff? k[c&0x0ff]: stack[c]);
 					continue;

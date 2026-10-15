@@ -3193,6 +3193,82 @@ public abstract class LuaValue extends Varargs {
         return h.call(LuaValue.valueOf(op1), this);
     }
 
+    // ------------------------ bitwise operators (32 bits) ------------------------
+
+    /** Bitwise and: {@code (this & rhs)} on 32 bit integers, with metatag processing. */
+    public LuaValue band(LuaValue rhs) {
+        return bitop(0, LuaConstant.MetaTag.BAND, this, rhs);
+    }
+
+    /** Bitwise or: {@code (this | rhs)} on 32 bit integers, with metatag processing. */
+    public LuaValue bor(LuaValue rhs) {
+        return bitop(1, LuaConstant.MetaTag.BOR, this, rhs);
+    }
+
+    /** Bitwise exclusive or: {@code (this ~ rhs)} on 32 bit integers, with metatag processing. */
+    public LuaValue bxor(LuaValue rhs) {
+        return bitop(2, LuaConstant.MetaTag.BXOR, this, rhs);
+    }
+
+    /** Shift left: {@code (this << rhs)}; a negative count shifts right, 32 or more gives 0. */
+    public LuaValue shl(LuaValue rhs) {
+        return bitop(3, LuaConstant.MetaTag.SHL, this, rhs);
+    }
+
+    /** Logical shift right: {@code (this >> rhs)}; a negative count shifts left, 32 or more gives 0. */
+    public LuaValue shr(LuaValue rhs) {
+        return bitop(4, LuaConstant.MetaTag.SHR, this, rhs);
+    }
+
+    /** Bitwise not: {@code ~this} on a 32 bit integer, with metatag processing. */
+    public LuaValue bnot() {
+        if (isnumber())
+            return LuaInteger.valueOf(~bitint(this));
+        LuaValue h = metatag(LuaConstant.MetaTag.BNOT);
+        if (h.isnil())
+            error("attempt to perform bitwise operation on a " + getType().typeName + " value");
+        return h.call(this, this);
+    }
+
+    /** Shift left of 32 bit integers like Lua: a negative count shifts right (logical), |count| >= 32 gives 0. */
+    public static int shiftLeft(int x, int n) {
+        if (n <= -32 || n >= 32)
+            return 0;
+        return n >= 0? x << n: x >>> -n;
+    }
+
+    /** The 32 bit integer value of a number (or a string that is a number), or an error. */
+    private static int bitint(LuaValue v) {
+        LuaNumber n = v.checknumber();
+        if (n instanceof LuaInteger)
+            return ((LuaInteger) n).v;
+        double d = n.todouble();
+        int i = (int) d;
+        if (i != d)
+            throw new LuaError("number has no integer representation");
+        return i;
+    }
+
+    private static LuaValue bitop(int op, LuaValue tag, LuaValue a, LuaValue b) {
+        if (a.isnumber() && b.isnumber()) {
+            int x = bitint(a), y = bitint(b);
+            switch (op) {
+                case 0: return LuaInteger.valueOf(x & y);
+                case 1: return LuaInteger.valueOf(x | y);
+                case 2: return LuaInteger.valueOf(x ^ y);
+                case 3: return LuaInteger.valueOf(shiftLeft(x, y));
+                default: return LuaInteger.valueOf(y == Integer.MIN_VALUE? 0: shiftLeft(x, -y));
+            }
+        }
+        LuaValue h = a.metatag(tag);
+        if (h.isnil()) {
+            h = b.metatag(tag);
+            if (h.isnil())
+                error("attempt to perform bitwise operation on a " + (a.isnumber()? b: a).getType().typeName + " value");
+        }
+        return h.call(a, b);
+    }
+
     /**
      * Same as {@link #arithmtwith(LuaValue, double)} when the left-hand-side
      * is an integer: the metamethod receives a lua integer.

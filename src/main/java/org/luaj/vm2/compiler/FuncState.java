@@ -862,6 +862,8 @@ public class FuncState extends Constants {
 			return false;
 		if ((op == OP_DIV || op == OP_MOD || op == OP_IDIV) && e2.u.nval().eq_b(LuaConstant.ZERO))
 			    return false;  /* do not attempt to divide by 0 */
+		if ((op >= OP_BAND && op <= OP_SHR) && (!e1.u.nval().isint() || !e2.u.nval().isint()))
+			return false;  /* a float with no integer value is an error at run time */
 		v1 = e1.u.nval();
 		v2 = e2.u.nval();
 		switch (op) {
@@ -885,6 +887,21 @@ public class FuncState extends Constants {
 			break;
 		case OP_IDIV:
 			r = v1.idiv(v2);
+			break;
+		case OP_BAND:
+			r = v1.band(v2);
+			break;
+		case OP_BOR:
+			r = v1.bor(v2);
+			break;
+		case OP_BXOR:
+			r = v1.bxor(v2);
+			break;
+		case OP_SHL:
+			r = v1.shl(v2);
+			break;
+		case OP_SHR:
+			r = v1.shr(v2);
 			break;
 		case OP_UNM:
 			r = v1.neg();
@@ -917,7 +934,7 @@ public class FuncState extends Constants {
 		if (constfolding(op, e1, e2))
 			return;
 		else {
-			int o2 = (op != OP_UNM && op != OP_LEN) ? this.exp2RK(e2)
+			int o2 = (op != OP_UNM && op != OP_LEN && op != OP_BNOT) ? this.exp2RK(e2)
 					: 0;
 			int o1 = this.exp2RK(e1);
 			if (o1 > o2) {
@@ -962,6 +979,15 @@ public class FuncState extends Constants {
 		    }
 			break;
 		}
+		case LexState.OPR_BNOT: {
+			if (e.isnumeral() && e.u.nval().isint())  /* constant? */
+				e.u.setNval(LuaInteger.valueOf(~e.u.nval().toint()));  /* fold it */
+			else {
+				this.exp2anyreg(e);
+				this.codearith(OP_BNOT, e, e2, line);
+			}
+			break;
+		}
 		case LexState.OPR_NOT:
 			this.codenot(e);
 			break;
@@ -995,6 +1021,11 @@ public class FuncState extends Constants {
 		case LexState.OPR_DIV:
 		case LexState.OPR_MOD:
 		case LexState.OPR_IDIV:
+		case LexState.OPR_BAND:
+		case LexState.OPR_BOR:
+		case LexState.OPR_BXOR:
+		case LexState.OPR_SHL:
+		case LexState.OPR_SHR:
 		case LexState.OPR_POW: {
 			if (!v.isnumeral())
 				this.exp2RK(v);
@@ -1058,6 +1089,21 @@ public class FuncState extends Constants {
 			break;
 		case LexState.OPR_IDIV:
 			this.codearith(OP_IDIV, e1, e2, line);
+			break;
+		case LexState.OPR_BAND:
+			this.codearith(OP_BAND, e1, e2, line);
+			break;
+		case LexState.OPR_BOR:
+			this.codearith(OP_BOR, e1, e2, line);
+			break;
+		case LexState.OPR_BXOR:
+			this.codearith(OP_BXOR, e1, e2, line);
+			break;
+		case LexState.OPR_SHL:
+			this.codearith(OP_SHL, e1, e2, line);
+			break;
+		case LexState.OPR_SHR:
+			this.codearith(OP_SHR, e1, e2, line);
 			break;
 		case LexState.OPR_POW:
 			this.codearith(OP_POW, e1, e2, line);

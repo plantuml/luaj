@@ -237,7 +237,15 @@ public class Lua {
 	/** floor division: R(A) := RK(B) // RK(C)  (added after the 5.2 opcodes, so the numbers of the others do not change) */
 	public static final int OP_IDIV = 40;
 
-	public static final int NUM_OPCODES	= OP_IDIV + 1;
+	/** bitwise operators on 32 bits, appended like OP_IDIV */
+	public static final int OP_BAND = 41; /*	A B C	R(A) := RK(B) & RK(C)				*/
+	public static final int OP_BOR  = 42; /*	A B C	R(A) := RK(B) | RK(C)				*/
+	public static final int OP_BXOR = 43; /*	A B C	R(A) := RK(B) ~ RK(C)				*/
+	public static final int OP_SHL  = 44; /*	A B C	R(A) := RK(B) << RK(C)				*/
+	public static final int OP_SHR  = 45; /*	A B C	R(A) := RK(B) >> RK(C)				*/
+	public static final int OP_BNOT = 46; /*	A B	R(A) := ~R(B)					*/
+
+	public static final int NUM_OPCODES	= OP_BNOT + 1;
 
 	/* pseudo-opcodes used in parsing only.  */
 	public static final int OP_GT  = 63; // >
@@ -324,6 +332,12 @@ public class Lua {
 		 (0<<7) | (1<<6) | (OpArgU<<4) | (OpArgN<<2) | (iABC),		/* OP_VARARG */
 		 (0<<7) | (0<<6) | (OpArgU<<4) | (OpArgU<<2) | (iAx),		/* OP_EXTRAARG */
 		 (0<<7) | (1<<6) | (OpArgK<<4) | (OpArgK<<2) | (iABC),		/* OP_IDIV */
+		 (0<<7) | (1<<6) | (OpArgK<<4) | (OpArgK<<2) | (iABC),		/* OP_BAND */
+		 (0<<7) | (1<<6) | (OpArgK<<4) | (OpArgK<<2) | (iABC),		/* OP_BOR */
+		 (0<<7) | (1<<6) | (OpArgK<<4) | (OpArgK<<2) | (iABC),		/* OP_BXOR */
+		 (0<<7) | (1<<6) | (OpArgK<<4) | (OpArgK<<2) | (iABC),		/* OP_SHL */
+		 (0<<7) | (1<<6) | (OpArgK<<4) | (OpArgK<<2) | (iABC),		/* OP_SHR */
+		 (0<<7) | (1<<6) | (OpArgR<<4) | (OpArgN<<2) | (iABC),		/* OP_BNOT */
 	  };
 
 	public static int getOpMode(int m) {

@@ -72,6 +72,24 @@ public class LuaConstant {
         /** LuaString constant with value "__sub" for use as metatag */
         public static final LuaString SUB = LuaValue.valueOf("__sub");
 
+        /** LuaString constant with value "__band" for use as metatag */
+        public static final LuaString BAND = LuaValue.valueOf("__band");
+
+        /** LuaString constant with value "__bor" for use as metatag */
+        public static final LuaString BOR = LuaValue.valueOf("__bor");
+
+        /** LuaString constant with value "__bxor" for use as metatag */
+        public static final LuaString BXOR = LuaValue.valueOf("__bxor");
+
+        /** LuaString constant with value "__shl" for use as metatag */
+        public static final LuaString SHL = LuaValue.valueOf("__shl");
+
+        /** LuaString constant with value "__shr" for use as metatag */
+        public static final LuaString SHR = LuaValue.valueOf("__shr");
+
+        /** LuaString constant with value "__bnot" for use as metatag */
+        public static final LuaString BNOT = LuaValue.valueOf("__bnot");
+
         /** LuaString constant with value "__idiv" for use as metatag */
         public static final LuaString IDIV = LuaValue.valueOf("__idiv");
 

@@ -84,14 +84,15 @@ public class LexState extends Constants {
 	*/
 	static final int
 	  OPR_ADD=0, OPR_SUB=1, OPR_MUL=2, OPR_DIV=3, OPR_MOD=4, OPR_IDIV=5, OPR_POW=6,
-	  OPR_CONCAT=7,
-	  OPR_NE=8, OPR_EQ=9,
-	  OPR_LT=10, OPR_LE=11, OPR_GT=12, OPR_GE=13,
-	  OPR_AND=14, OPR_OR=15,
-	  OPR_NOBINOPR=16;
+	  OPR_BAND=7, OPR_BOR=8, OPR_BXOR=9, OPR_SHL=10, OPR_SHR=11,
+	  OPR_CONCAT=12,
+	  OPR_NE=13, OPR_EQ=14,
+	  OPR_LT=15, OPR_LE=16, OPR_GT=17, OPR_GE=18,
+	  OPR_AND=19, OPR_OR=20,
+	  OPR_NOBINOPR=21;
 
 	static final int
-		OPR_MINUS=0, OPR_NOT=1, OPR_LEN=2, OPR_NOUNOPR=3;
+		OPR_MINUS=0, OPR_NOT=1, OPR_LEN=2, OPR_BNOT=3, OPR_NOUNOPR=4;
 
 	/* exp kind */
 	static final int
@@ -147,7 +148,7 @@ public class LexState extends Constants {
 	    "end", "false", "for", "function", "goto", "if",
 	    "in", "local", "nil", "not", "or", "repeat",
 	    "return", "then", "true", "until", "while",
-	    "..", "...", "==", ">=", "<=", "~=", "//",
+	    "..", "...", "==", ">=", "<=", "~=", "//", "<<", ">>",
 	    "::", "<eof>", "<number>", "<name>", "<string>",
 	};
 
@@ -159,7 +160,8 @@ public class LexState extends Constants {
 		TK_RETURN=274, TK_THEN=275, TK_TRUE=276, TK_UNTIL=277, TK_WHILE=278,
 		/* other terminal symbols */
 		TK_CONCAT=279, TK_DOTS=280, TK_EQ=281, TK_GE=282, TK_LE=283, TK_NE=284, TK_IDIV=285,
-		TK_DBCOLON=286, TK_EOF=287, TK_NUMBER=288, TK_NAME=289, TK_STRING=290;
+		TK_SHL=286, TK_SHR=287,
+		TK_DBCOLON=288, TK_EOF=289, TK_NUMBER=290, TK_NAME=291, TK_STRING=292;
 	  
 	final static int FIRST_RESERVED = TK_AND;
 	final static int NUM_RESERVED = TK_WHILE+1-FIRST_RESERVED;
@@ -584,7 +586,10 @@ public class LexState extends Constants {
 			}
 			case '<': {
 				nextChar();
-				if (current != '=')
+				if (current == '<') {
+					nextChar();
+					return TK_SHL;
+				} else if (current != '=')
 					return '<';
 				else {
 					nextChar();
@@ -593,7 +598,10 @@ public class LexState extends Constants {
 			}
 			case '>': {
 				nextChar();
-				if (current != '=')
+				if (current == '>') {
+					nextChar();
+					return TK_SHR;
+				} else if (current != '=')
 					return '>';
 				else {
 					nextChar();
@@ -1454,6 +1462,8 @@ public class LexState extends Constants {
 			return OPR_MINUS;
 		case '#':
 			return OPR_LEN;
+		case '~':
+			return OPR_BNOT;
 		default:
 			return OPR_NOUNOPR;
 		}
@@ -1474,6 +1484,16 @@ public class LexState extends Constants {
 			return OPR_MOD;
 		case TK_IDIV:
 			return OPR_IDIV;
+		case '&':
+			return OPR_BAND;
+		case '|':
+			return OPR_BOR;
+		case '~':
+			return OPR_BXOR;
+		case TK_SHL:
+			return OPR_SHL;
+		case TK_SHR:
+			return OPR_SHR;
 		case '^':
 			return OPR_POW;
 		case TK_CONCAT:
@@ -1511,14 +1531,18 @@ public class LexState extends Constants {
 	};
 	
 	static Priority[] priority = {  /* ORDER OPR */
-	   new Priority(6, 6), new Priority(6, 6), new Priority(7, 7), new Priority(7, 7), new Priority(7, 7), new Priority(7, 7),  /* `+' `-' `*' `/' `%' `//' */
-	   new Priority(10, 9), new Priority(5, 4),                 /* power and concat (right associative) */
-	   new Priority(3, 3), new Priority(3, 3),                  /* equality and inequality */
+	   new Priority(10, 10), new Priority(10, 10),                 /* `+' `-' */
+	   new Priority(11, 11), new Priority(11, 11), new Priority(11, 11), new Priority(11, 11), /* `*' `/' `%' `//' */
+	   new Priority(14, 13),                                       /* power (right associative) */
+	   new Priority(6, 6), new Priority(4, 4), new Priority(5, 5), /* `&' `|' `~' */
+	   new Priority(7, 7), new Priority(7, 7),                     /* shifts */
+	   new Priority(9, 8),                                         /* concat (right associative) */
+	   new Priority(3, 3), new Priority(3, 3),                     /* equality and inequality */
 	   new Priority(3, 3), new Priority(3, 3), new Priority(3, 3), new Priority(3, 3),  /* order */
-	   new Priority(2, 2), new Priority(1, 1)                   /* logical (and/or) */
+	   new Priority(2, 2), new Priority(1, 1)                      /* logical (and/or) */
 	};
 
-	static final int UNARY_PRIORITY	= 8;  /* priority for unary operators */
+	static final int UNARY_PRIORITY	= 12;  /* priority for unary operators */
 
 
 	/*
