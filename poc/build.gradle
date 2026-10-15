@@ -1,0 +1,73 @@
+// Proof of concept: compile luaj (the sources of the parent directory) with TeaVM
+// to JavaScript and to C, and run the same test program on the three editions
+// (JVM, JavaScript, C) to compare their outputs.
+//
+// This build is independent of the one in the parent directory. Use the wrapper
+// of the parent:  ../gradlew <task>   (see README.md in this directory).
+
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.teavm' version "${findProperty('teavmVersion') ?: '0.11.0'}"
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(11)
+}
+
+sourceSets {
+    main {
+        java {
+            // the library itself, shared with the parent build
+            srcDir '../src/main/java'
+            // command-line tools of the library: default package, files, reflection
+            exclude 'lua.java', 'luac.java'
+        }
+    }
+}
+
+def pocMain = 'org.luaj.poc.Main'
+
+application {
+    mainClass = pocMain
+}
+
+teavm {
+    all {
+        mainClass = pocMain
+    }
+    js {
+        targetFileName = 'luaj-poc.js'
+    }
+    c {
+        // default options; the generated files are in build/generated/teavm/c
+    }
+}
+
+// Reference output: the test program on the JVM, without the timing lines
+// ('#' lines are timings: they are not comparable).
+tasks.register('jvmReference', JavaExec) {
+    group = 'verification'
+    description = 'Runs the test program on the JVM and writes build/jvm.txt'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = pocMain
+    def out = layout.buildDirectory.file('jvm-raw.txt')
+    def filtered = layout.buildDirectory.file('jvm.txt')
+    doFirst {
+        standardOutput = new FileOutputStream(out.get().asFile)
+    }
+    doLast {
+        filtered.get().asFile.text = out.get().asFile.readLines('UTF-8')
+                .findAll { !it.startsWith('#') }.join('\n') + '\n'
+    }
+}

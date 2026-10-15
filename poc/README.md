@@ -1,0 +1,79 @@
+# luaj proof of concept: JVM / JavaScript / C
+
+Compiles luaj (the sources of the parent directory, nothing is copied) with
+TeaVM to JavaScript and to C, and runs one test program (`org.luaj.poc.Main`)
+on the three editions to compare their outputs.
+
+The main goal is to check `BigDecimal`, used by `NumberFormatter` for every
+float-to-string conversion (`tostring`, `print`, `string.format("%f %e %g")`),
+on the C edition: correctness (half-even rounding, huge and tiny exponents,
+subnormals) and speed. The program also runs Lua scripts that exercise the
+whole interpreter (integers that wrap, bitwise operators, `utf8`, strings,
+tables, closures, `pcall`, tail calls, stack overflow, `load`).
+
+This build is independent of the one in the parent directory. Run it with the
+wrapper of the parent (from this `poc` directory):
+
+```
+../gradlew jvmReference     # JVM run, writes build/jvm.txt
+../gradlew generateJavaScript
+../gradlew generateC
+```
+
+The TeaVM version is `0.11.0` by default; change it with
+`../gradlew -PteavmVersion=<version> ...` or in `build.gradle`.
+The task names and the output folders (under `build/generated/teavm/`) are
+those of the TeaVM Gradle plugin; if your version names them differently,
+`../gradlew tasks --all | grep -i generate` lists them.
+
+## What the program prints
+
+- `-- NumberFormatter`: 44 doubles, each one with `tostring` and with `%f`,
+  `%e`, `%g` at several precisions, then the same doubles through
+  `string.format`.
+- `-- lua <name>`: the result of each Lua script.
+- `== done, N error(s) ==`.
+- Lines starting with `#`: timings (not comparable, ignored below).
+
+`expected.txt` is the reference output (JVM, timings removed). The
+`NumberFormatter` part has also been checked against C `printf` (glibc) for all
+the `%f/%e/%g` values: no difference.
+
+## Comparing
+
+JVM, to check that the reference is up to date:
+
+```
+../gradlew jvmReference
+diff expected.txt build/jvm.txt
+```
+
+JavaScript (Node.js; `generateJavaScript` writes `luaj-poc.js`, which prints
+with `console.log`):
+
+```
+node build/generated/teavm/js/luaj-poc.js > build/js-raw.txt
+grep -v '^#' build/js-raw.txt | diff expected.txt -
+```
+
+C: compile the files of `build/generated/teavm/c` with your C compiler (the
+generator also writes a `CMakeLists.txt`), run the executable and compare in
+the same way:
+
+```
+luaj-poc > build/c-raw.txt
+grep -v '^#' build/c-raw.txt | diff expected.txt -
+```
+
+On Windows: `findstr /v /b "#" build\c-raw.txt > build\c.txt` then
+`fc expected.txt build\c.txt`.
+
+Things to report: any difference in the `NumberFormatter` lines (digits,
+rounding), any `ERROR in ...` line, a crash on the `stack overflow` script
+(deep recursion on the native stack), and the `#` timings for the three
+editions (`fib(27)` and 20000 `string.format`).
+
+## Known quirk (not related to TeaVM)
+
+`xpcall` does not call its message handler for `error("msg", 0)`; it does for
+errors raised with a position. The test program avoids that case.
