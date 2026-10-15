@@ -1,5 +1,6 @@
 package org.luaj;
 
+import org.luaj.vm2.LoadState;
 import org.junit.jupiter.api.BeforeEach;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaEngine;
@@ -15,6 +16,7 @@ public class ResourcesTestCase {
     @BeforeEach
     protected void setUp() {
         globals = LuaEngine.newGlobals();
+        LoadState.install(globals); // the test scripts are precompiled
     }
 
     protected void setBaseDir(String baseDir) {

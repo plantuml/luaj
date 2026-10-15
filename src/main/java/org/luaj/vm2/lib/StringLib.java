@@ -25,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.luaj.vm2.Buffer;
-import org.luaj.vm2.compiler.DumpState;
 import org.luaj.vm2.LuaString;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
@@ -103,7 +102,6 @@ public class StringLib extends TwoArgFunction {
         LuaTable string = new LuaTable();
         string.set("byte", new _byte());
         string.set("char", new _char());
-        string.set("dump", new dump());
         string.set("find", new find());
         string.set("format", new format());
         string.set("gmatch", new gmatch());
@@ -182,31 +180,6 @@ public class StringLib extends TwoArgFunction {
                 bytes[i] = (byte) c;
             }
             return LuaString.valueUsing(bytes);
-        }
-    }
-
-    /**
-     * string.dump (function[, stripDebug])
-     *
-     * Returns a string containing a binary representation of the given
-     * function, so that a later loadstring on this string returns a copy of the
-     * function. function must be a Lua function without upvalues. Boolean param
-     * stripDebug - true to strip debugging info, false otherwise. The default
-     * value for stripDebug is true.
-     *
-     * TODO: port dumping code as optional add-on
-     */
-    static final class dump extends VarArgFunction {
-        @Override
-        public Varargs invoke(Varargs args) {
-            LuaValue f = args.checkfunction(1);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try {
-                DumpState.dump(((LuaClosure) f).p, baos, args.optboolean(2, true));
-                return LuaString.valueUsing(baos.toByteArray());
-            } catch (IOException e) {
-                return error(e.getMessage());
-            }
         }
     }
 

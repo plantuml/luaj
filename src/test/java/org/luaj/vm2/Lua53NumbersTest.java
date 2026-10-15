@@ -433,10 +433,19 @@ class Lua53NumbersTest {
 	// ===================== binary chunks =====================
 
 	@Test
-	void binaryChunksKeepTheSubtypeOfConstants() {
-		assertEquals("integer float float integer", eval("local f = load(string.dump(load('return 1, 1.0, 2^31, 7'))) "
-				+ "local a, b, c, d = f() return math.type(a) .. ' ' .. math.type(b) .. ' ' .. math.type(c) .. ' ' .. math.type(d)"));
-		assertEquals("-2147483648.0 3.5 1e+100", eval("local f = load(string.dump(load('return -2147483648, 3.5, 1e100'))) "
-				+ "local a, b, c = f() return a .. ' ' .. b .. ' ' .. c"));
+	void binaryChunksKeepTheSubtypeOfConstants() throws Exception {
+		// LuaEngine installs no undumper: this test installs the loader itself
+		assertEquals("integer float float integer", viaBinaryChunk(
+				"local a, b, c, d = 1, 1.0, 2^31, 7 return math.type(a) .. ' ' .. math.type(b) .. ' ' .. math.type(c) .. ' ' .. math.type(d)"));
+		assertEquals("-2147483648.0 3.5 1e+100", viaBinaryChunk(
+				"local a, b, c = -2147483648, 3.5, 1e100 return a .. ' ' .. b .. ' ' .. c"));
+	}
+
+	private static String viaBinaryChunk(String code) throws Exception {
+		Globals g = LuaEngine.newGlobals();
+		LoadState.install(g);
+		java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+		org.luaj.vm2.compiler.DumpState.dump(((LuaClosure) g.load(code, "t")).p, out, true);
+		return g.load(new java.io.ByteArrayInputStream(out.toByteArray()), "bin", "b", g).call().tojstring();
 	}
 }

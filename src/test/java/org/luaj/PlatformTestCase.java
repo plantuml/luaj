@@ -1,5 +1,6 @@
 package org.luaj;
 
+import org.luaj.vm2.LoadState;
 import org.junit.jupiter.api.BeforeEach;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaValue;
@@ -23,6 +24,7 @@ public class PlatformTestCase extends ResourcesTestCase {
             default:
             case JSE:
                 globals = LuaEngine.newGlobals();
+        LoadState.install(globals); // the test scripts are precompiled
                 break;
         }
     }

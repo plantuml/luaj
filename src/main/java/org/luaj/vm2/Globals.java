@@ -277,15 +277,17 @@ public class Globals extends LuaTable {
 	 */
 	public Prototype loadPrototype(InputStream is, String chunkname, String mode) throws IOException {
 		if (mode.indexOf('b') >= 0) {
-			if (undumper == null)
-				error("No undumper.");
-			if (!is.markSupported())
-				is = new BufferedStream(is);
-			is.mark(4);
-			final Prototype p = undumper.undump(is, chunkname);
-			if (p != null)
-				return p;
-			is.reset();
+			// binary chunks are only accepted when an undumper is installed
+			// (LuaEngine installs none: unchecked bytecode is not safe to run)
+			if (undumper != null) {
+				if (!is.markSupported())
+					is = new BufferedStream(is);
+				is.mark(4);
+				final Prototype p = undumper.undump(is, chunkname);
+				if (p != null)
+					return p;
+				is.reset();
+			}
 		}
 		if (mode.indexOf('t') >= 0) {
 			return compilePrototype(is, chunkname);

@@ -67,7 +67,6 @@ public class LuaEngine {
 		globals.load(new StringLib());
 		globals.load(new Utf8Lib());
 		globals.load(new MathLib());
-		LoadState.install(globals);
 		LuaC.install(globals);
 		return globals;
 	}

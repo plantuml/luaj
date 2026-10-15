@@ -11,16 +11,8 @@ checkallerrors('assert',{{nil,false,n=2},{'message'}},'message')
 
 -- collectgarbage
 banner('collectgarbage')
-checkallpass('collectgarbage',{{'collect','count'}},true)
-checkallerrors('collectgarbage',{{astring, anumber}},'bad argument')
-checkallerrors('collectgarbage',{{aboolean, atable, afunction}},'string expected')
-
--- dofile
-banner('dofile')
---checkallpass('dofile', {})
---checkallpass('dofile', {{'test/lua/errors/args.lua'}})
---checkallerrors('dofile', {{'foo.bar'}}, 'cannot open foo.bar')
---checkallerrors('dofile', {nonstring}, 'bad argument')
+-- does nothing and always returns 0, whatever the arguments
+checkallpass('collectgarbage',{{'collect','count','step','abc',1.25,true}})
 
 -- error
 banner('error')
@@ -47,11 +39,6 @@ checkallpass('load', {{'return'},{'mychunk'}})
 checkallerrors('load', {somefunction,nonstring}, 'bad argument')
 checkallerrors('load', {{nil,aboolean,atable},notastring}, 'bad argument')
 checkallerrors('load', {{'return'},nonstring}, 'bad argument')
-
--- loadfile
-banner('loadfile')
-checkallpass('loadfile', {{'args.lua'}})
-checkallerrors('loadfile', {nonstring}, 'bad argument')
 
 -- next
 banner('next')

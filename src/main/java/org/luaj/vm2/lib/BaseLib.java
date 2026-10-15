@@ -96,11 +96,9 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 		env.set("_VERSION", Lua._VERSION);
 		env.set("assert", new _assert());
 		env.set("collectgarbage", new collectgarbage());
-		env.set("dofile", new dofile());
 		env.set("error", new error());
 		env.set("getmetatable", new getmetatable());
 		env.set("load", new load());
-		env.set("loadfile", new loadfile());
 		env.set("pcall", new pcall());
 		env.set("print", new print(this));
 		env.set("rawequal", new rawequal());
@@ -144,36 +142,12 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 	}
 
 	// "collectgarbage", // ( opt [,arg] ) -> value
+	// Does nothing and always returns 0: memory is not observable by scripts, so
+	// that they behave the same on every edition (JVM, JavaScript, C).
 	static final class collectgarbage extends VarArgFunction {
 		@Override
 		public Varargs invoke(Varargs args) {
-			String s = args.optjstring(1, "collect");
-			if ("collect".equals(s)) {
-				System.gc();
-				return LuaConstant.ZERO;
-			} else if ("count".equals(s)) {
-				Runtime rt = Runtime.getRuntime();
-				long used = rt.totalMemory()-rt.freeMemory();
-				return varargsOf(valueOf(used/1024.), valueOf(used%1024));
-			} else if ("step".equals(s)) {
-				System.gc();
-				return LuaConstant.TRUE;
-			} else {
-				argumentError(1, "invalid option '" + s + "'");
-			}
-			return LuaConstant.NIL;
-		}
-	}
-
-	// "dofile", // ( filename ) -> result1, ...
-	final class dofile extends VarArgFunction {
-		@Override
-		public Varargs invoke(Varargs args) {
-			args.argcheck(args.isstring(1) || args.isnil(1), 1, "filename must be string or nil");
-			String filename = args.isstring(1)? args.tojstring(1): null;
-			Varargs v = filename == null? loadStream(globals.STDIN, "=stdin", "bt", globals)
-				: loadFile(args.checkjstring(1), "bt", globals);
-			return v.isnil(1)? error(v.tojstring(2)): v.arg1().invoke();
+			return LuaConstant.ZERO;
 		}
 	}
 
@@ -213,18 +187,6 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 			LuaValue env = args.optvalue(4, globals);
 			return loadStream(ld.isstring()? ld.strvalue().toInputStream(): new StringInputStream(ld.checkfunction()),
 				source, mode, env);
-		}
-	}
-
-	// "loadfile", // ( [filename [, mode [, env]]] ) -> chunk | nil, msg
-	final class loadfile extends VarArgFunction {
-		@Override
-		public Varargs invoke(Varargs args) {
-			args.argcheck(args.isstring(1) || args.isnil(1), 1, "filename must be string or nil");
-			String filename = args.isstring(1)? args.tojstring(1): null;
-			String mode = args.optjstring(2, "bt");
-			LuaValue env = args.optvalue(3, globals);
-			return filename == null? loadStream(globals.STDIN, "=stdin", mode, env): loadFile(filename, mode, env);
 		}
 	}
 
@@ -492,28 +454,6 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 			int i = args.checkint(2) + 1;
 			LuaValue v = args.arg1().get(i);
 			return v.isnil()? LuaConstant.NIL: varargsOf(LuaInteger.valueOf(i), v);
-		}
-	}
-
-	/**
-	 * Load from a named file, returning the chunk or nil,error of can't load
-	 *
-	 * @param env
-	 * @param mode
-	 * @return Varargs containing chunk, or NIL,error-text on error
-	 */
-	public Varargs loadFile(String filename, String mode, LuaValue env) {
-		InputStream is = globals.finder.findResource(filename);
-		if (is == null)
-			return varargsOf(LuaConstant.NIL, valueOf("cannot open " + filename + ": No such file or directory"));
-		try {
-			return loadStream(is, "@" + filename, mode, env);
-		} finally {
-			try {
-				is.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 		}
 	}
 
