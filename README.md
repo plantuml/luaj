@@ -392,7 +392,7 @@ Added or changed:
   `loadfile` go through the `Globals.finder` (`ResourceFinder`) installed by
   the host.
 - **Java 11** is the language level (shared with the TeaVM builds).
-- Tests: 201 of 213 pass; the 12 failures are known and pre-existing (see
+- Tests: 202 of 213 pass; the 11 failures are known and pre-existing (see
   below).
 
 Runtime dependencies: none (JDK only). Test dependency: JUnit 5.
@@ -402,8 +402,8 @@ Runtime dependencies: none (JDK only). Test dependency: JUnit 5.
 Cleaning:
 
 - `CompatibilityTest`: its reference outputs and directory are missing. Revive
-  it against a real `lua5.2` and fix its base directory (11 of the 12 known
-  failures). `VarargsTest.testNegativeIndices` is the twelfth.
+  it against a real `lua5.2` and fix its base directory (all 11 known
+  failures).
 - `lua.java` and `luac.java` (command-line tools) still use `System.*`,
   `Class.forName(...).newInstance()` and files. Move them to tests/tools or
   delete them.
@@ -451,7 +451,7 @@ New work:
   Java package `org.luaj.vm2.lib` and all test scripts. It is fixed now, but
   old clones may still need `git add -f` for such files.
 - **Test baselines**: compare failing test names, not the count; a clean run
-  currently has exactly the 12 known failures.
+  currently has exactly the 11 known failures.
 - **Upstream**: this fork has diverged heavily; merging upstream changes is
   not realistic.
 - A `$` line is Lua only when the prefix is at the start of the line. Any
@@ -505,4 +505,4 @@ ant test
 
 `build.xml` compiles `src/main/java` and `src/test/java`, copies the test
 resources and runs the JUnit 5 tests with the console launcher in `lib/`.
-Expect the 12 known failures listed in `CLAUDE.md`.
+Expect the 11 known failures listed in `CLAUDE.md`.

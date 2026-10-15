@@ -25,15 +25,14 @@ The only jar kept in the repository is the JUnit console launcher in `lib/`.
 
 ## Test baseline
 
-A clean run has **213 tests, 201 passing, 12 failing**. Compare failing test
-names, not the count. The 12 known failures:
+A clean run has **213 tests, 202 passing, 11 failing**. Compare failing test
+names, not the count. The 11 known failures:
 
 - `CompatibilityTest$JseCompatibilityTest`: `testBaseLib`, `testErrors`,
   `testFunctions`, `testManyUpvals`, `testMathLib`, `testMetatags`,
   `testStringLib`, `testTableLib`, `testTailcalls`, `testUpvalues`, `testVm`
-  (reference outputs and base directory are missing).
-- `VarargsTest.testNegativeIndices` (message format
-  `bad argument #1 (start must be > 0)` vs `bad argument #1: ...`).
+  (the test looks for its scripts in `compatibility/`, which does not exist
+  (they are in `luaj3.0-tests/`), and the `.out` reference outputs are missing).
 
 ## Using clide
 
@@ -49,6 +48,6 @@ python3 /path/to/clide/start_clide.py /path/to/luaj
 printf 'rebuild\nerrors\n' | python3 /path/to/clide/clide.py /path/to/luaj
 ```
 
-Expect `0 error(s)` from `rebuild`, and the 12 failures above from
+Expect `0 error(s)` from `rebuild`, and the 11 failures above from
 `run_tests failures`. JUnit comes bundled with `clide.jar`; no jar is needed in
 `.clide/`.
