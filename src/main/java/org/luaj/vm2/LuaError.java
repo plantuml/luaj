@@ -77,6 +77,21 @@ public class LuaError extends RuntimeException {
 		return m != null ? LuaValue.valueOf(m): null;
 	}
 	
+	/** True once a Lua function frame has processed the error (position added, handler of xpcall run). */
+	public boolean isHandled() {
+		return traceback != null;
+	}
+
+	/** True if the error value is not a plain message (it was given to <code>error</code> as a non-string value, or with level 0). */
+	boolean hasMessageObject() {
+		return object != null;
+	}
+
+	/** Replace the error value, as the message handler of <code>xpcall</code> does. */
+	void setMessageObject(LuaValue value) {
+		this.object = value;
+	}
+
 	/** Construct LuaError when a program exception occurs. 
 	 * <p> 
 	 * All errors generated from lua code should throw LuaError(String) instead.

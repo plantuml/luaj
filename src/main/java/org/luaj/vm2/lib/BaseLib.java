@@ -233,6 +233,9 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 		@Override
 		public Varargs invoke(Varargs args) {
 			LuaValue func = args.checkvalue(1);
+			// the handler of an enclosing xpcall only sees the errors that reach it
+			final LuaValue preverror = globals.errorfunc;
+			globals.errorfunc = null;
 			try {
 				return varargsOf(LuaConstant.TRUE, func.invoke(args.subargs(2)));
 			} catch (LuaError le) {
@@ -241,6 +244,8 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 			} catch (Exception e) {
 				final String m = e.getMessage();
 				return varargsOf(LuaConstant.FALSE, valueOf(m != null? m: e.toString()));
+			} finally {
+				globals.errorfunc = preverror;
 			}
 		}
 	}
@@ -413,8 +418,13 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 				try {
 					return varargsOf(LuaConstant.TRUE, args.arg1().invoke(args.subargs(3)));
 				} catch (LuaError le) {
-					final LuaValue m = le.getMessageObject();
-					return varargsOf(LuaConstant.FALSE, m != null? m: LuaConstant.NIL);
+					LuaValue m = le.getMessageObject();
+					if (m == null)
+						m = LuaConstant.NIL;
+					// raised by a Java function called directly: no Lua frame has run the handler yet
+					if (!le.isHandled())
+						m = callHandler(globals.errorfunc, m);
+					return varargsOf(LuaConstant.FALSE, m);
 				} catch (Exception e) {
 					final String m = e.getMessage();
 					return varargsOf(LuaConstant.FALSE, valueOf(m != null? m: e.toString()));
@@ -422,6 +432,14 @@ public class BaseLib extends TwoArgFunction implements ResourceFinder {
 			} finally {
 				globals.errorfunc = preverror;
 			}
+		}
+	}
+
+	private static LuaValue callHandler(LuaValue handler, LuaValue err) {
+		try {
+			return handler.call(err);
+		} catch (Throwable t) {
+			return valueOf("error in error handling");
 		}
 	}
 

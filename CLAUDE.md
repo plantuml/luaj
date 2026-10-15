@@ -6,8 +6,9 @@ cannot compile) and what remains to do.
 
 ## Layout
 
-- `src/main/java`: the library (`org.luaj.vm2.*`) and the two command-line
-  tools `lua.java` / `luac.java` (default package, to be moved or deleted).
+- `src/main/java`: the library (`org.luaj.vm2.*`).
+- `poc/`: separate Gradle build that compiles the library with TeaVM (JS and
+  C) and runs a test program on the three editions; see its README.
 - `src/test/java`, `src/test/resources`: JUnit 5 tests and their Lua scripts.
   The scripts are loaded through the class loader.
 
@@ -25,7 +26,7 @@ The only jar kept in the repository is the JUnit console launcher in `lib/`.
 
 ## Test baseline
 
-A clean run has **285 tests, 274 passing, 11 failing**. Compare failing test
+A clean run has **295 tests, 284 passing, 11 failing**. Compare failing test
 names, not the count. The 11 known failures:
 
 - `CompatibilityTest$JseCompatibilityTest`: `testBaseLib`, `testErrors`,

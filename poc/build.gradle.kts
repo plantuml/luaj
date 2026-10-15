@@ -30,8 +30,6 @@ sourceSets {
         java {
             // the library itself, shared with the parent build
             srcDir("../src/main/java")
-            // command-line tools of the library: default package, files, reflection
-            exclude("lua.java", "luac.java")
         }
     }
 }

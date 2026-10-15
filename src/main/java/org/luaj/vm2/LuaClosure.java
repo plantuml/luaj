@@ -637,21 +637,22 @@ public class LuaClosure extends LuaFunction {
 	}
 
 	/**
-	 *  Run the error hook if there is one
-	 *  @param msg the message to use in error hook processing.
+	 *  Run the error handler of <code>xpcall</code> if there is one.
+	 *  @param err the error value (a message, or any value given to <code>error</code>).
+	 *  @return the value returned by the handler, or err itself if there is no handler.
 	 * */
-	String errorHook(String msg, int level) {
-		if (globals == null ) return msg;
+	LuaValue errorHook(LuaValue err) {
+		if (globals == null ) return err;
 		if (globals.errorfunc == null)
-			return msg;
+			return err;
 		final LuaValue e = globals.errorfunc;
 		globals.errorfunc = null;
 		// leave the handler some room, even when the error is a stack overflow
 		globals.maxCallDepth += 20;
 		try {
-			return e.call( valueOf(msg) ).tojstring();
+			return e.call( err );
 		} catch ( Throwable t ) {
-			return "error in error handling";
+			return valueOf("error in error handling");
 		} finally {
 			globals.maxCallDepth -= 20;
 			globals.errorfunc = e;
@@ -659,10 +660,18 @@ public class LuaClosure extends LuaFunction {
 	}
 
 	private void processErrorHooks(LuaError le, Prototype p, int pc) {
-		final String file = p.source != null ? p.source.tojstring(): "?";
-		final int line = p.lineinfo != null && pc >= 0 && pc < p.lineinfo.length ? p.lineinfo[pc] : -1;
-		le.fileline = file + ":" + line + ": ";
-		le.traceback = errorHook(le.getMessage(), le.level);
+		// an error value that is not a message (error(x, 0), error({})) gets no position
+		if (!le.hasMessageObject()) {
+			final String file = p.source != null ? p.source.tojstring(): "?";
+			final int line = p.lineinfo != null && pc >= 0 && pc < p.lineinfo.length ? p.lineinfo[pc] : -1;
+			le.fileline = file + ":" + line + ": ";
+		}
+		final LuaValue err = le.getMessageObject();
+		final LuaValue handled = errorHook(err);
+		// 'traceback' also marks the error as processed: the outer frames leave it alone
+		le.traceback = handled.tojstring();
+		if (handled != err)
+			le.setMessageObject(handled);
 	}
 	
 	private UpValue findupval(LuaValue[] stack, short idx, UpValue[] openups) {
