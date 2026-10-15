@@ -466,6 +466,50 @@ Added or changed:
 
 Runtime dependencies: none (JDK only). Test dependency: JUnit 5.
 
+### TeaVM C: what the `poc/` measured
+
+`poc/` (see its README) compiles luaj with TeaVM 0.16.0 to JavaScript and to C
+and runs one test program on the three editions. Results of the first runs of
+the C edition:
+
+- **Output**: identical to the JVM on all the compared lines (number
+  formatting, integers that wrap, bitwise operators, `utf8`, strings, tables,
+  closures, `pcall`, tail calls, stack overflow, `load`).
+- **`BigDecimal` is not reliable in TeaVM C**: `round(MathContext)` and
+  `precision()` gave wrong digits for `1.5` (1 digit), `1e16` and `1e23` (16
+  digits). `NumberFormatter` therefore does its own rounding on the exact
+  expansion and only calls `new BigDecimal(double).toPlainString()` (correct).
+  Do not use the other `BigDecimal` operations in code that must run on the
+  C edition. `NumberFormatterTest` compares with the JVM on 20000 random values.
+- **Heap**: TeaVM C starts with a 1 MB heap and crashed (bus error,
+  segmentation fault) while growing it. The build uses a fixed heap
+  (`minHeapSize = maxHeapSize = 256`).
+- **Speed**: entering a `try` block costs about 200 ns on the C edition (calls
+  made inside the `try` are fast, 10 ns). The interpreter loop was entirely in
+  a `try`, so each instruction that calls a method paid it: the interpreter
+  was 30 to 60 times slower than on the JVM. The loop now lives in
+  `LuaClosure.run`, without any `try`; `LuaClosure.execute` keeps the error
+  handling, once per Lua call.
+
+| TeaVM C | before | now |
+|---|---|---|
+| `fib(27)` | 5596 ms | 596 ms |
+| empty loop, per iteration | 1120 ns | 21 ns |
+| integer addition, per iteration | 2677 ns | 38 ns |
+| call of a Java function | 4941 ns | 55 ns |
+| table set/get, 1M entries | 6471 ms | 80 ms |
+| `string.format`, per call | 15565 ns | 4002 ns |
+
+What remains: about 1 us per Lua function call and 1.5 us per `pcall` (the
+`try` of `execute`, entered once per call). This is judged good enough for
+diagram scripts. If a real script needs more, the way out is to remove that
+`try` too: keep the running closure and the call depth in `Globals`, and let
+`pcall` (and the host entry point) restore them instead of a `finally` in each
+call; the position of an error and the closing of the upvalues must then be
+handled there too. It is a risky change, not done.
+
+The JavaScript edition has not been measured yet.
+
 ## 4. What remains to do / to clean
 
 Cleaning:
@@ -494,7 +538,8 @@ Cleaning:
 
 New work:
 
-1. First TeaVM compilation, JS then C, to see what breaks.
+1. Run `poc/` on the JavaScript edition (Node.js) and compare with the JVM;
+   the C edition is done (see section 3).
 2. `puml.*` API (what Lua can call, what it receives).
 3. The `$` / `${}` / `$$` front end: where it plugs into the preprocessor,
    how errors map back to diagram line numbers.
@@ -542,9 +587,8 @@ New work:
 ## 6. Open questions
 
 - 32-bit integers are decided (a 64-bit integer costs size and speed on JS,
-  where a `long` is a `BigInt`). Is the wrap-around of the integers, instead
-  of an error, the right behavior for diagrams? An alternative is an error
-  "integer overflow".
+  where a `long` is a `BigInt`), and so is the wrap-around of the integers
+  (no "integer overflow" error).
 - Which parts of the PlantUML preprocessor does Lua replace, and which stay
   (`!include`, `!theme`, variables)? Do both coexist in one diagram, and in
   which order are they evaluated?
@@ -579,6 +623,8 @@ New work:
 ```
 
 Requires JDK 11 or later (the build uses `--release 11`).
+
+`poc/` is a separate Gradle build (TeaVM, JavaScript and C): see its README.
 
 Without network access (Gradle cannot download its distribution), use Ant:
 
