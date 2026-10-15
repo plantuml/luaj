@@ -176,6 +176,33 @@ problems; recursion is allowed (up to `maxCallDepth`).
 
 The APIs the two kinds of Lua would see are sketched in section 2 below; none of it is implemented.
 
+### Order with the preprocessor
+
+Decided: the **reduced preprocessor runs first, then text Lua**.
+
+- The preprocessor keeps the text assembly only: `!include`, `!includesub`,
+  `!theme`, `!pragma`, `!startsub`. Its logic (variables, `!if`, `!while`,
+  `!function`, `!procedure`, the `%` functions) is deprecated in favor of Lua;
+  see `PREPROCESSOR_FUNCTIONS.md` for the fate of each function.
+- `$` and `$$` lines pass through the preprocessor untouched (no `$variable`
+  substitution, no `%` or `!` handling inside a Lua line or block).
+- Because `!include` is already flattened when Lua starts, the Lua code of
+  included files is in the stream, and one `Globals` per diagram is shared
+  naturally.
+- The text produced by Lua is **not** sent back to the preprocessor, so
+  `!include` and `!theme` are written outside Lua, never through `emit`.
+- A diagram without any Lua line pays nothing: no `Globals`, no library
+  loading, no luaj class loaded (the Lua entry point sits behind a holder
+  class). The only cost is one prefix test per line, done while the
+  preprocessor already reads the lines. The `Globals` is created at the first
+  `$` line, not before.
+- `${expr}` is interpolated only in a diagram that has Lua lines.
+
+Legacy diagrams keep the old preprocessor unchanged, frozen. Proposal, not
+decided yet: in a diagram that contains a Lua line, the legacy logic
+directives and `%` functions are an explicit error, so the two worlds never
+interact.
+
 ## 2. Two Lua flavors
 
 There would be **two different uses of Lua in PlantUML**. They share the same
@@ -652,9 +679,13 @@ New work:
 - 32-bit integers are decided (a 64-bit integer costs size and speed on JS,
   where a `long` is a `BigInt`), and so is the wrap-around of the integers
   (no "integer overflow" error).
-- Which parts of the PlantUML preprocessor does Lua replace, and which stay
-  (`!include`, `!theme`, variables)? Do both coexist in one diagram, and in
-  which order are they evaluated?
+- Do the legacy logic directives and `%` functions become an error as soon
+  as a diagram has a Lua line (proposed), or may both coexist? The order is
+  settled (see "Order with the preprocessor" in section 1), and so is the
+  split: `!include`, `!includesub`, `!theme`, `!pragma`, `!startsub` stay in
+  the preprocessor.
+- Conditional inclusion: `!include` is resolved before Lua, so Lua cannot
+  decide it. Add a `puml.include(name)`, or leave it out?
 - `$` single-line only, `$$` blocks only, or both?
 - Engine Lua: is it worth a separate entry point (an executable that takes
   a `.lua` file), and what is its working directory and file policy?
@@ -669,9 +700,6 @@ New work:
   catch): what does the engine entry point do?
 - Names: "text Lua" / "engine Lua" are working names. Which user-facing
   names for the two flavors?
-- Execution order for text Lua: run all Lua first and feed the generated
-  text to the existing preprocessor (keeps `!include`, `!theme`, ...), or
-  interleave Lua and preprocessor line by line?
 - Should the global alias `emit` exist, or only `puml.emit`?
 - JSON: write a small parser, or reuse the one of the preprocessor?
 - Procedures: explicit `emit()` (A), a `$ procedure` whose body is PlantUML
@@ -679,7 +707,7 @@ New work:
   how are `$` lines inside a procedure that is itself called from a `$`
   line ordered with the emitted text?
 - How are `${expr}` values escaped when they contain PlantUML syntax?
-- Do Lua scripts share one global state across `!include`d files?
+- One `Globals` per diagram, shared with its `!include`d files, is the plan; confirm.
 - What does `require` resolve against (stdlib resources, URLs, the `!include`
   search path)? Is it allowed at all in the online/server editions?
 - Resource limits and timeouts for untrusted diagrams (server editions).
