@@ -19,6 +19,8 @@ public final class Node {
 	public final int col;
 	private final String[] names;
 	private final Object[] values;
+	/** Free slot for the passes that annotate the tree (the resolver stores a scope here). */
+	Object info;
 
 	/** Creates a node from alternating field names and values. */
 	public Node(String type, int line, int col, Object... nameValuePairs) {

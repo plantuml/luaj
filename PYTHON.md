@@ -4,7 +4,8 @@ Working document for the `python1` branch. The Lua front-end and the Lua
 semantics are being dropped: the goal is an interpreter for a **subset of
 Python 3**, in pure Java (same constraints as before: no reflection, no
 threads, nothing TeaVM cannot compile), embedded in PlantUML. Everything here
-is a design, nothing is implemented yet.
+is implemented in `org.luaj.vm2.python`; the Lua code of the other packages
+is still there and will be removed.
 
 ## 1. Principles
 
@@ -16,9 +17,8 @@ is a design, nothing is implemented yet.
   run under CPython first; their output is the reference. See section 7.
 - **Deterministic and bounded.** Same output on the JAR, JavaScript and C
   editions. An instruction counter and a call depth limit bound every run.
-- **The VM may change.** The bytecode is ours to modify. It starts from the
-  Lua 5.3 instruction format (iABC / iABx / iAsBx, 6-bit opcode) because the
-  machinery exists, and evolves toward Python.
+- **The VM is ours.** A stack machine with its own instruction set (section
+  6); nothing is kept from the Lua 5.3 register machine.
 
 ## 2. The language subset
 
@@ -92,6 +92,9 @@ Tests that exercise these live in `deviations/` and are not run under CPython.
 - `int` is 32-bit; an overflow raises `OverflowError`.
 - Instruction and call depth limits (not catchable).
 - Error messages differ; tests compare the exception type, not the text.
+- `dict.keys()` and friends are live views but support no set operations.
+- A list that contains itself raises `RecursionError` in `repr` instead of
+  printing `[...]`.
 - `hash`, `id`: not provided. `sum` of floats is a plain left-to-right sum
   (CPython 3.12+ compensates); the tests avoid cases where this shows.
 - `1 << 31` and any other result outside 32 bits raise `OverflowError`.
@@ -99,7 +102,7 @@ Tests that exercise these live in `deviations/` and are not run under CPython.
 ## 5. Pipeline
 
 ```
-source -> PyLexer -> PyParser -> AST -> Resolver -> CodeGen -> Prototype
+source -> PyLexer -> PyParser -> AST -> Resolver -> CodeGen -> Code -> Interp
 ```
 
 - **PyLexer**: INDENT / DEDENT tokens, no newline inside brackets, tabs
@@ -108,42 +111,63 @@ source -> PyLexer -> PyParser -> AST -> Resolver -> CodeGen -> Prototype
   expressions and comprehensions put an expression before the part that
   decides how to compile it, and nested functions can refer to a local that
   is assigned later in the enclosing function.
-- **Resolver**: one pass over the AST per function. A name assigned anywhere
-  in a function is local (unless declared `global` / `nonlocal`); other names
-  are free variables (upvalue if an enclosing function owns them, else a
-  global). Comprehensions get their own scope.
-- **CodeGen**: emits registers-based code, reusing the ideas of `FuncState`
-  (register allocation, jump lists, constant table).
-- `PyC implements Globals.Compiler`, installed like `LuaC` today.
+- **Resolver** (`Resolver`, `Scope`): one pass over the AST. A name bound
+  anywhere in a function is local (unless declared `global` / `nonlocal`);
+  names bound at the top level are globals. A local used by an inner function
+  becomes a *cell*; the inner function receives it as a *free* variable.
+  Comprehensions and lambdas are scopes of their own. It reports the scope
+  errors (duplicate parameter, `global` after use, `nonlocal` without binding).
+- **CodeGen**: one `Code` per function, tracking the stack depth of every
+  instruction (so `maxStack` is exact and a mismatch is an internal error),
+  with labels, a line table, a constant table and the exception table.
+  Statements that cannot be reached emit nothing.
+- **Interp**: the loop; holds globals, output sink and limits.
 
-## 6. Instruction set (direction)
+Closures are CPython's cells: slots are positional parameters, keyword-only
+parameters, `*args`, `**kwargs`, other locals, the free variables received
+from the closure, then temporaries. The prologue wraps captured variables
+with `MAKE_CELL`.
 
-From the Lua 5.3 set, by adaptation:
+## 6. Instruction set
 
-| Lua | Python subset |
+One `int` per instruction: opcode in the low 8 bits, unsigned 24-bit argument
+above it. Operands live on a stack; locals are slots of the frame; a Java
+`null` in a slot means "unbound". Jump targets are absolute.
+
+| Group | Instructions |
 |---|---|
-| `TEST`, `TESTSET` | truthiness through one `isTrue` function |
-| `GETTABLE`, `SETTABLE` | `GETITEM`, `SETITEM` (0-based, negative indices, dict keys) |
-| new | `SLICE`, `IN`, `DELITEM` |
-| `NEWTABLE`, `SETLIST` | `NEWLIST`, `NEWTUPLE`, `NEWDICT`, `SETLIST` kept for batches |
-| `GETTABUP`, `SETTABUP`, `_ENV` | `GETGLOBAL`, `SETGLOBAL` (constant name) |
-| `SELF` | kept, resolves methods of builtin types |
-| `TFORCALL`, `TFORLOOP` | `GETITER`, `FORITER` (iterator is a Java object) |
-| `FORPREP`, `FORLOOP` | kept as a fast path when the iterable is a `range` |
-| `CALL` (variable results) | fixed single result; `CALLKW` for keyword arguments, `CALLEX` for `*` / `**` |
-| `VARARG`, `TAILCALL` | removed |
-| `CONCAT`, `LEN` | removed (`+`, `len()`) |
-| arithmetic | overloaded by type (`str + str`, `list + list`, `str * int`), plus `FLOORDIV` |
-| new | no `SETUP`-style opcode: handler table in the `Prototype` |
+| stack | `POP DUP DUP2 ROT2 ROT3` |
+| variables | `LOAD_CONST LOAD_FAST STORE_FAST DELETE_FAST LOAD_CELL STORE_CELL DELETE_CELL LOAD_CLOSURE MAKE_CELL LOAD_GLOBAL STORE_GLOBAL DELETE_GLOBAL LOAD_ATTR` |
+| operators | `BINARY_OP` (operator in the argument, `INPLACE` bit for `+=`), `UNARY_NEG/POS/INVERT/NOT`, `COMPARE_OP`, `IS_OP`, `CONTAINS_OP` |
+| containers | `GETITEM SETITEM DELITEM BUILD_SLICE BUILD_LIST BUILD_TUPLE BUILD_DICT BUILD_STRING LIST_APPEND LIST_EXTEND MAP_ADD DICT_ADD_KW DICT_MERGE_KW UNPACK` |
+| control | `JUMP JUMP_IF_FALSE JUMP_IF_TRUE JUMP_IF_FALSE_KEEP JUMP_IF_TRUE_KEEP GET_ITER FOR_ITER` |
+| calls | `CALL`, `CALL_KW` (names tuple on top), `CALL_EX` (list and optional dict), `MAKE_FUNCTION` (flags: defaults, keyword-only defaults, closure), `RETURN` |
+| exceptions | `RAISE RERAISE EXC_MATCH` |
+| other | `IMPORT FORMAT_VALUE` (f-strings) |
 
-**Instruction counter.** Incremented on backward jumps and calls; when the
-limit is reached the VM raises an error that is not catchable by `except`.
+**Values** are plain Java objects: `Integer`, `Double`, `Boolean`, `String`,
+a singleton for `None`, and small classes for list, tuple, dict (insertion
+ordered, keys normalised so that `True`, `1` and `1.0` are one key), range,
+slice, dict views, functions and types. Iterators return Java `null` at the
+end.
 
-**Exceptions.** A handler table in the `Prototype`: `[startpc, endpc) ->
-handlerpc, register`. The interpreter loop catches the Java error, looks for a
-handler covering the current `pc`, and jumps to it; no cost when nothing is
-thrown. `try/except/else` and `raise` only; `finally` and `with` would need
-code duplication at every exit and are out of scope.
+**Instruction counter.** Incremented on backward jumps, on calls and in the
+long loops of builtins; when the limit is reached the VM throws
+`ExecutionLimitError`, which is not a Python exception and so is out of reach
+of `except`.
+
+**Call depth.** `Interp.setMaxDepth` (default 1000); beyond it a catchable
+`RecursionError`. A Java `StackOverflowError` is turned into the same error.
+
+**Exceptions.** No `SETUP`-style instruction: the `Code` has a static table
+`[start, end) -> handler, stack depth`. When a Python exception reaches the
+loop, the loop looks for the first entry covering the faulting instruction
+(inner `try` statements come first), cuts the stack to the recorded depth,
+pushes the exception and jumps. A `try` costs nothing when nothing is thrown.
+`except` clauses are compiled to `EXC_MATCH` tests; the exception is kept in a
+hidden slot so that a bare `raise` re-raises it. `try/except/else` and `raise`
+only; `finally` and `with` would need code duplication at every exit and are
+out of scope.
 
 ## 7. Tests
 
@@ -153,8 +177,9 @@ code duplication at every exit and are out of scope.
   script that only asserts must exit with status 0. Scripts in `deviations/`
   are skipped.
 - `language/limits.py` is generated by `tools/gen_limits.py`.
-- The Java tests (`ResourcesTestCase` and friends) will compile each script
-  with `PyC`, run it, and compare the output with the `.out` file.
+- `PyScriptsTest` runs each script on `Interp` and compares the output with
+  the `.out` file (a script without one must simply finish); the scripts of
+  `deviations/` have their own tests.
 - Before the compiler exists, the parser can already be tested on all the
   scripts (syntax only), and the AST compared to the one given by CPython's
   `ast` module for the same file.
@@ -190,7 +215,9 @@ outside a function, attribute assignment, `raise ... from`, integers outside
 1. Test scripts as valid Python, checked with CPython. **Done.**
 2. `PyLexer`, `PyParser`, AST; test: parse everything, compare with `ast`.
    **Done.**
-3. `Resolver`, then `CodeGen` on a first small instruction set, running on
-   the existing `LuaValue` values to get something executing.
-4. New value types (list, dict, tuple, str), new opcodes, truthiness.
-5. Exceptions, instruction counter, builtins and methods.
+3. `Resolver`, `CodeGen`, `Interp` on the new stack machine, values, builtins,
+   methods, formatting, exceptions, limits. **Done**: all scripts of
+   `src/test/resources/python` print what CPython prints.
+4. To do: remove the Lua code and the old tests, TeaVM build of the new
+   package (`poc/`), more builtins and methods as needed, speed (caching of
+   globals, `LOAD_METHOD`, avoiding boxing).

@@ -26,14 +26,10 @@ The only jar kept in the repository is the JUnit console launcher in `lib/`.
 
 ## Test baseline
 
-A clean run has **322 tests, 311 passing, 11 failing**. Compare failing test
-names, not the count. The 11 known failures:
-
-- `CompatibilityTest$JseCompatibilityTest`: `testBaseLib`, `testErrors`,
-  `testFunctions`, `testManyUpvals`, `testMathLib`, `testMetatags`,
-  `testStringLib`, `testTableLib`, `testTailcalls`, `testUpvalues`, `testVm`
-  (the test looks for its scripts in `compatibility/`, which does not exist
-  (they are in `luaj3.0-tests/`), and the `.out` reference outputs are missing).
+The Python work is in `org.luaj.vm2.python` (see `PYTHON.md`). Its tests are
+`PyParserTest` and `PyScriptsTest`; both must pass entirely. The old Lua
+tests no longer have their `.lua` resources and fail; they will be removed
+with the Lua code.
 
 ## Using clide
 
