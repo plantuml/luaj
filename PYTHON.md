@@ -159,10 +159,37 @@ code duplication at every exit and are out of scope.
   scripts (syntax only), and the AST compared to the one given by CPython's
   `ast` module for the same file.
 
-## 8. Order of work
+## 8. Syntax tree and parser (done)
 
-1. Test scripts as valid Python, checked with CPython (this step).
+Package `org.luaj.vm2.python`:
+
+- `PyLexer` / `Token`: indentation, brackets, continuation lines, numbers
+  (decimal, hex, octal, binary, floats, underscores), strings with prefixes
+  `r f u rf fr`, single and triple quotes. Tabs are rejected.
+- `PyParser`: recursive descent, nesting limited to 200 levels (a hostile
+  input gives a syntax error, never a stack overflow). Constructs outside the
+  subset are syntax errors with an explicit message.
+- `Node`: generic tree node shaped like CPython's `ast` (same names, same
+  fields, same order). Integers are `Long`, floats `Double`, `None` is `null`.
+- `AstDump`: text form of a tree. `tools/dump_ast.py` writes the same format
+  for CPython's tree.
+
+`PyParserTest` checks that both trees are identical: for the syntax files of
+`src/test/resources/python-ast` (reference dumps stored in `.ast` files) and,
+when `python3` is available, for every test script of
+`src/test/resources/python`. It also checks the error cases and that damaged
+input only produces `PySyntaxError`.
+
+Not done at parse time (the resolver and the code generator will report them):
+duplicate parameter names, `break` / `continue` outside a loop, `return`
+outside a function, attribute assignment, `raise ... from`, integers outside
+32 bits, `global` / `nonlocal` misuse.
+
+## 9. Order of work
+
+1. Test scripts as valid Python, checked with CPython. **Done.**
 2. `PyLexer`, `PyParser`, AST; test: parse everything, compare with `ast`.
+   **Done.**
 3. `Resolver`, then `CodeGen` on a first small instruction set, running on
    the existing `LuaValue` values to get something executing.
 4. New value types (list, dict, tuple, str), new opcodes, truthiness.
