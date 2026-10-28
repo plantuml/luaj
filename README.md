@@ -59,8 +59,8 @@ JavaScript and C and runs one test program on the three editions; see
 ## 5. What remains to do
 
 - Check the TeaVM editions (the old findings are kept in `poc/README.md`: the
-  interpreter loop must stay out of `try` blocks on TeaVM C, which `Interp.run`
-  does not yet satisfy).
+  interpreter loop must stay out of `try` blocks on TeaVM C; `Interp.run` has
+  none, `Interp.execute` has one per call).
 - The API towards PlantUML (functions exposed to the script, `$` lines in
   diagrams).
 - More builtins and methods as the needs appear, speed.

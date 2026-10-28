@@ -59,5 +59,7 @@ per call) and 190 ns per `pcall`.
 ## Not yet checked for the Python interpreter
 
 The editions have not been built yet since the Lua interpreter was replaced.
-The first thing to look at is the cost of entering a `try` block on TeaVM C
-described above: `Interp.run` has its whole loop inside one.
+The loop (`Interp.run`) has no `try` block; `Interp.execute` has one per call
+and re-enters the loop at the handler after an exception (the faulting pc is
+kept in `pcs[depth]`). The first thing to measure on TeaVM C is the cost of
+that one `try` per call.

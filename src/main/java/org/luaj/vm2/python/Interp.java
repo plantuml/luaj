@@ -23,6 +23,8 @@ public final class Interp {
 	private long maxSteps = 200000000L;
 	private int depth;
 	private int maxDepth = 1000;
+	/** pcs[d] is the next instruction of the frame at call depth d, kept for the exception handlers. */
+	private int[] pcs = new int[1002];
 
 	public Interp(Output out) {
 		this.out = out;
@@ -36,6 +38,7 @@ public final class Interp {
 
 	public void setMaxDepth(int n) {
 		maxDepth = n;
+		pcs = new int[n + 2];
 	}
 
 	/** Number of steps (backward jumps and calls) executed so far. */
@@ -219,14 +222,40 @@ public final class Interp {
 
 	// ------------------------------------------------------------ the loop
 
+	/**
+	 * Runs a frame. The interpreter loop ({@link #run}) is kept out of any
+	 * try block (entering one is slow on TeaVM C): this method has the only
+	 * one, once per call, and re-enters the loop at the handler after an
+	 * exception.
+	 */
 	private Object execute(Code code, Object[] f, Map<String, Object> globals) {
 		if (depth >= maxDepth)
 			throw PyOps.err(Types.RECURSION_ERROR, "maximum recursion depth exceeded");
-		depth++;
+		final int d = ++depth;
+		int pc = 0;
+		int sp = code.nslots;
 		try {
-			return run(code, f, globals);
+			for (;;) {
+				PyError e;
+				try {
+					return run(code, f, globals, pc, sp, d);
+				} catch (PyError pe) {
+					e = pe;
+				} catch (StackOverflowError so) {
+					e = PyOps.err(Types.RECURSION_ERROR, "maximum recursion depth exceeded");
+				}
+				int fault = pcs[d] - 1;
+				int h = findHandler(code, fault);
+				if (h < 0) {
+					e.addFrame(code.filename, code.lines[fault], code.name);
+					throw e;
+				}
+				sp = code.nslots + code.excDepth[h];
+				f[sp++] = e.exc;
+				pc = code.excHandler[h];
+			}
 		} finally {
-			depth--;
+			depth = d - 1;
 		}
 	}
 
@@ -266,16 +295,16 @@ public final class Interp {
 		return PyOps.err(Types.TYPE_ERROR, "exceptions must derive from BaseException");
 	}
 
-	private Object run(Code code, Object[] f, Map<String, Object> globals) {
+	private Object run(Code code, Object[] f, Map<String, Object> globals, int pc, int sp, int level) {
+		final int[] pcs = this.pcs;
 		final int[] c = code.code;
 		final Object[] consts = code.consts;
 		final String[] names = code.names;
-		int pc = 0;
-		int sp = code.nslots;
 		for (;;) {
-			try {
+			{
 				for (;;) {
 					int ins = c[pc++];
+					pcs[level] = pc;
 					int arg = ins >>> 8;
 					switch (ins & 0xff) {
 					case Op.NOP:
@@ -739,25 +768,6 @@ public final class Interp {
 						throw new IllegalStateException("bad opcode " + (ins & 0xff));
 					}
 				}
-			} catch (PyError e) {
-				int h = findHandler(code, pc - 1);
-				if (h < 0) {
-					e.addFrame(code.filename, code.lines[pc - 1], code.name);
-					throw e;
-				}
-				sp = code.nslots + code.excDepth[h];
-				f[sp++] = e.exc;
-				pc = code.excHandler[h];
-			} catch (StackOverflowError so) {
-				PyError e = PyOps.err(Types.RECURSION_ERROR, "maximum recursion depth exceeded");
-				int h = findHandler(code, pc - 1);
-				if (h < 0) {
-					e.addFrame(code.filename, code.lines[pc - 1], code.name);
-					throw e;
-				}
-				sp = code.nslots + code.excDepth[h];
-				f[sp++] = e.exc;
-				pc = code.excHandler[h];
 			}
 		}
 	}
