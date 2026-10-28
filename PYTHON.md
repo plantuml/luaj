@@ -74,7 +74,9 @@ operator on strings and f-strings are supported with the usual conversions
 (`s r d i x X o f e g c %`, width, precision, flags).
 
 Module `math`: `sqrt floor ceil fabs fmod sin cos tan asin acos atan atan2
-exp log log10 pow pi e inf nan isnan isinf trunc`.
+exp log log10 pow pi e inf nan isnan isinf trunc`, and also `tau sinh cosh
+tanh expm1 log1p log2 hypot copysign isfinite gcd factorial fsum isclose degrees
+radians`.
 
 Exceptions: `BaseException > Exception > {ArithmeticError > {ZeroDivisionError,
 OverflowError}, LookupError > {KeyError, IndexError}, ValueError, TypeError,
