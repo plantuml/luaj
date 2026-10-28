@@ -1,12 +1,13 @@
 package org.luaj.poc;
 
-import org.luaj.vm2.Globals;
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.NumberFormatter;
-import org.luaj.vm2.LuaEngine;
+import org.luaj.vm2.python.ExecutionLimitError;
+import org.luaj.vm2.python.Interp;
+import org.luaj.vm2.python.PyError;
+import org.luaj.vm2.python.PySyntaxError;
 
 /**
- * Test program for the editions of luaj: JVM, JavaScript (TeaVM) and C (TeaVM).
+ * Test program for the editions of the Python interpreter: JVM, JavaScript
+ * (TeaVM) and C (TeaVM).
  * <p>
  * Everything it prints is deterministic and must be identical on the three
  * editions, except the lines that start with '#' (timings).
@@ -16,376 +17,110 @@ public class Main {
 	private static int errors = 0;
 
 	public static void main(String[] args) {
-		System.out.println("== luaj poc ==");
-		numberFormatter();
-		luaScripts();
+		System.out.println("== python poc ==");
+		numbers();
+		scripts();
+		limits();
 		System.out.println("== done, " + errors + " error(s) ==");
 		bench();
 	}
 
-	// ------------------------------------------------------------------
-	// 1. NumberFormatter (BigDecimal): the part that must be checked on TeaVM C
-	// ------------------------------------------------------------------
-
-	private static final double[] NUMBERS = { 0.0, -0.0, 1.0, -1.0, 0.1, 0.2, 0.1 + 0.2, 1.0 / 3, 2.0 / 3, 0.5, 1.5, 2.5, 3.5,
-			0.125, 0.375, 100.0, 123456.789, 1e14, 1e15, 1e16, 1e21, 1e100, 1e300, 1.7976931348623157e308,
-			4.9e-324, 2.2250738585072014e-308, 1e-5, 1e-4, 1e-10, 9.995, 99.5, 999999.5, 0.000123456,
-			3.141592653589793, 2.718281828459045, 255.0 / 256, 4503599627370496.0, 9007199254740993.0,
-			9.223372036854775807e18, 0.3, 0.7, 1e23, 5e-324, 123456789012345678.0 };
-
-	private static final String[] FORMATS = { "f0", "f2", "f10", "e0", "e3", "e15", "g0", "g1", "g6", "g14", "g17" };
-
-	private static void numberFormatter() {
-		System.out.println("-- NumberFormatter");
-		for (int i = 0; i < NUMBERS.length; i++) {
-			double v = NUMBERS[i];
-			StringBuilder sb = new StringBuilder();
-			sb.append(i).append(" tostring=").append(NumberFormatter.tostring(v));
-			for (String f : FORMATS) {
-				int prec = Integer.parseInt(f.substring(1));
-				sb.append(' ').append(f).append('=');
-				if (v != v || v == 0 && 1 / v < 0) {
-					sb.append('-'); // the sign of -0.0 is handled by string.format, not by NumberFormatter
-					continue;
-				}
-				switch (f.charAt(0)) {
-				case 'f':
-					// huge values make long strings, but they are exact and must match
-					sb.append(NumberFormatter.fixed(Math.abs(v), prec, false));
-					break;
-				case 'e':
-					sb.append(NumberFormatter.exponent(Math.abs(v), prec, false));
-					break;
-				default:
-					sb.append(NumberFormatter.general(Math.abs(v), prec, false));
-				}
-			}
-			System.out.println(sb);
-		}
-		// the same numbers through the Lua string library
-		Globals g = LuaEngine.newGlobals();
-		StringBuilder sb = new StringBuilder();
-		for (double v : NUMBERS)
-			sb.append(g.load("local v = ... return string.format('%.3f|%10.2e|%-12g|%g', v, v, v, v)", "fmt").call(LuaValue.valueOf(v)).tojstring()).append('\n');
-		System.out.print(sb);
-	}
-
-	// ------------------------------------------------------------------
-	// 2. Lua scripts
-	// ------------------------------------------------------------------
-
-	private static String lines(String... l) {
-		StringBuilder sb = new StringBuilder();
-		for (String s : l)
-			sb.append(s).append('\n');
-		return sb.toString();
-	}
-
-	private static void luaScripts() {
-		run("integers", lines(
-				"local t = {}",
-				"local function p(...) local a = table.pack(...) for i = 1, a.n do a[i] = tostring(a[i]) end t[#t+1] = table.concat(a, ' ') end",
-				"p(math.maxinteger, math.mininteger, math.maxinteger + 1, math.mininteger - 1)",
-				"p(7 // 2, -7 // 2, 7 % -3, -7 % 3, 7.5 // 2, 2^10, 10 / 2, 3 | 4, 6 & 3, 5 ~ 1, ~0, 1 << 31, 1 << 32, -1 >> 28)",
-				"p(math.type(1), math.type(1.0), math.type('1'), math.tointeger(3.0), math.tointeger(3.5))",
-				"p(0xffffffff, 0x7fffffff, 2147483648, -2147483648, 1e3, 0x10, 1 == 1.0, '10' + 5, '0x10' + 0)",
-				"p(string.format('%d %5d %-5d| %x %X %o %c %q', 42, 42, 42, 255, 255, 8, 65, 'hi\\n'))",
-				"p(tostring(1/0), tostring(-1/0), tostring(0/0), tostring(-0.0), 3 .. '', 3.0 .. '')",
-				"p(pcall(function() return 1 // 0 end))",
-				"p(pcall(function() return 1 % 0 end))",
-				"p(pcall(function() return 1.5 | 0 end))",
-				"return table.concat(t, '\\n')"));
-
-		run("utf8", lines(
-				"local t = {}",
-				"local function p(...) local a = table.pack(...) for i = 1, a.n do a[i] = tostring(a[i]) end t[#t+1] = table.concat(a, ' ') end",
-				"local s = 'h\\u{e9}llo \\u{20ac} \\u{1F600}'",
-				"p(#s, utf8.len(s), utf8.codepoint(s, 1, -1))",
-				"for pos, c in utf8.codes(s) do p(pos, c) end",
-				"p(utf8.char(72, 228, 8364, 128512) == 'H\\u{e4}\\u{20ac}\\u{1F600}')",
-				"p(utf8.offset(s, 3), utf8.offset(s, -1), utf8.len('\\xff'))",
-				"local n = 0 for ch in s:gmatch(utf8.charpattern) do n = n + 1 end p(n)",
-				"return table.concat(t, '\\n')"));
-
-		run("strings", lines(
-				"local t = {}",
-				"local function p(...) local a = table.pack(...) for i = 1, a.n do a[i] = tostring(a[i]) end t[#t+1] = table.concat(a, ' ') end",
-				"p(('hello world'):upper(), ('abc'):rep(3, '-'), ('hello'):sub(2, -2), ('hello'):find('l+'))",
-				"p(('key = value'):match('^(%w+)%s*=%s*(%w+)$'))",
-				"p(('a,b,,c'):gsub(',', ';'))",
-				"p(string.format('%5.1f|%-8s|%s|%i', 3.14159, 'ab', nil, 7))",
-				"local words = {} for w in ('the quick brown fox'):gmatch('%a+') do words[#words+1] = w end p(#words, words[4])",
-				"p(('x'):byte(), string.char(72, 105), ('abc'):reverse(), #('abc'):rep(1000))",
-				"p(tostring(12), tostring(12.5), tostring(true), tostring(nil), tonumber('  0x1p4  '), tonumber('z', 36), tonumber('1e2'))",
-				"return table.concat(t, '\\n')"));
-
-		run("tables", lines(
-				"local t = {}",
-				"local function p(...) local a = table.pack(...) for i = 1, a.n do a[i] = tostring(a[i]) end t[#t+1] = table.concat(a, ' ') end",
-				"local a = {5, 2, 8, 1, 9, 3}",
-				"table.sort(a) p(table.concat(a, ','))",
-				"table.sort(a, function(x, y) return x > y end) p(table.concat(a, ','))",
-				"table.insert(a, 100) table.insert(a, 1, 0) p(table.concat(a, ','), table.remove(a), table.remove(a, 1), #a)",
-				"p(table.concat(table.move({1, 2, 3}, 1, 3, 2), ','), select('#', table.unpack({1, nil, 3}, 1, 3)))",
-				"local seen = {} for i, v in ipairs({10, 20, 30}) do seen[#seen+1] = i * v end p(table.concat(seen, ','))",
-				"local keys = {} for k in pairs({a = 1, b = 2, c = 3}) do keys[#keys+1] = k end table.sort(keys) p(table.concat(keys))",
-				"local mt = setmetatable({}, {__index = function(_, k) return k * 2 end}) p(mt[21], rawget(mt, 21))",
-				"local v = setmetatable({}, {__add = function(a, b) return 'added' end, __tostring = function() return 'V' end, __len = function() return 42 end})",
-				"p(v + 1, tostring(v), #v)",
-				"return table.concat(t, '\\n')"));
-
-		run("functions", lines(
-				"local t = {}",
-				"local function p(...) local a = table.pack(...) for i = 1, a.n do a[i] = tostring(a[i]) end t[#t+1] = table.concat(a, ' ') end",
-				"local function fib(n) if n < 2 then return n end return fib(n - 1) + fib(n - 2) end",
-				"p(fib(20))",
-				"local function counter() local c = 0 return function() c = c + 1 return c end end",
-				"local c1, c2 = counter(), counter() c1() c1() p(c1(), c2())",
-				"local function va(...) return select('#', ...), (select(2, ...)) end p(va('a', 'b', 'c'))",
-				"p(select(-1, 1, 2, 3))",
-				"local ok, err = pcall(error, {code = 7}) p(tostring(ok), type(err), err.code)",
-				"local ok2, err2 = pcall(function() local x = nil; return x.field end) p(tostring(ok2), (err2:gsub('^.-:%d+: ', '')))",
-				"p(select(2, xpcall(function() error('boom') end, function(m) return 'handled ' .. m end)))",
-				"local function tail(n) if n == 0 then return 'done' end return tail(n - 1) end p(tail(100000))",
-				"p(pcall(function() local function r() return 1 + r() end return r() end))",
-				"for i = 3, 1, -1 do t[#t+1] = 'loop ' .. i end",
-				"for i = 1, 3 do goto continue; ::continue:: end",
-				"local s = 0 for i = 1, 100 do s = s + i end p(s)",
-				"p(load('return 1 + 2')(), pcall(load, 'this is not lua'))",
-				"p(select('#', load('syntax error here')))",
-				"return table.concat(t, '\\n')"));
-	}
-
-	private static void run(String name, String script) {
-		System.out.println("-- lua " + name);
-		try {
-			Globals g = LuaEngine.newGlobals();
-			System.out.println(g.load(script, name).call().tojstring());
-		} catch (Throwable e) {
-			errors++;
-			System.out.println("ERROR in " + name + ": " + e);
-		}
-	}
-
-	// ------------------------------------------------------------------
-	// 3. Timings ('#' lines: not compared). Each one isolates one cost, to find why the
-	// calls are slow on TeaVM C.
-	// ------------------------------------------------------------------
-
-	/** keeps the micro-benchmarks from being optimized away */
-	private static long sink;
-
-	private static String mem() {
-		try {
-			Runtime rt = Runtime.getRuntime();
-			return " [free " + rt.freeMemory() / 1048576 + " MB of " + rt.totalMemory() / 1048576 + " MB]";
-		} catch (Throwable e) {
-			return "";
-		}
-	}
-
-	/** n = number of iterations, only to show the time per iteration */
-	private static void time(String name, int n, Runnable r) {
-		System.out.println("# start " + name + mem()); // if the program crashes, the last 'start' tells where
-		try {
-			long t0 = System.nanoTime();
-			r.run();
-			long t1 = System.nanoTime();
-			long ns = t1 - t0;
-			System.out.println("# " + name + ": " + ns / 1000000 + " ms" + (n > 0? ", " + ns / n + " ns/iteration": "") + mem());
-		} catch (Throwable e) {
-			System.out.println("# " + name + " failed: " + e);
-		}
-	}
-
-	private static void timeLua(Globals g, String name, int n, String code) {
-		final LuaValue f = g.load(code, name);
-		time("lua " + name, n, new Runnable() {
-			public void run() {
-				sink += f.call().tojstring().length();
+	/** Runs a program, returns what it printed (and the error, if any). */
+	private static String run(String source, long maxSteps, int maxDepth) {
+		final StringBuilder out = new StringBuilder();
+		Interp in = new Interp(new Interp.Output() {
+			@Override
+			public void write(String text) {
+				out.append(text);
 			}
 		});
-	}
-
-	private static final class Depth {
-		int depth;
-	}
-
-	private static int guarded(Depth d, int x) {
-		d.depth++;
+		in.setMaxSteps(maxSteps);
+		in.setMaxDepth(maxDepth);
 		try {
-			return x + 1;
-		} finally {
-			d.depth--;
+			in.run(source, "poc.py");
+		} catch (PyError e) {
+			out.append("PyError ").append(e.typeName()).append(": ").append(e.text()).append('\n');
+		} catch (PySyntaxError e) {
+			out.append("PySyntaxError ").append(e.getMessage()).append('\n');
+		} catch (ExecutionLimitError e) {
+			out.append("ExecutionLimitError\n");
 		}
+		return out.toString();
 	}
+
+	private static void show(String title, String source) {
+		System.out.println("-- " + title);
+		System.out.print(run(source, 200000000L, 1000));
+	}
+
+	// ------------------------------------------------------------------
+	// 1. Floats: BigDecimal is the part that must be checked on TeaVM C
+	// ------------------------------------------------------------------
+
+	private static final String NUMBERS = "[0.0, -0.0, 1.0, -1.0, 0.1, 0.2, 0.1 + 0.2, 1.0 / 3, 2.0 / 3, 0.5, 1.5, 2.5, 3.5,"
+			+ " 0.125, 0.375, 100.0, 123456.789, 1e14, 1e15, 1e16, 1e21, 1e100, 1e300, 1.7976931348623157e308,"
+			+ " 4.9e-324, 2.2250738585072014e-308, 1e-5, 1e-4, 1e-10, 9.995, 99.5, 999999.5, 0.000123456,"
+			+ " 3.141592653589793, 2.718281828459045, 255.0 / 256, 4503599627370496.0, 9007199254740993.0,"
+			+ " 9.223372036854775807e18, 0.3, 0.7, 1e23, 5e-324, 123456789012345678.0]";
+
+	private static void numbers() {
+		show("floats", "for i, v in enumerate(" + NUMBERS + "):\n"
+				+ "    print(i, repr(v), '%.0f' % v, '%.2f' % v, '%.10f' % v, '%.0e' % v, '%.3e' % v,"
+				+ " '%.15e' % v, '%g' % v, '%.14g' % v, '%.17g' % v, f'{v:10.3f}', f'{v:,.1f}')\n");
+	}
+
+	// ------------------------------------------------------------------
+	// 2. Scripts that exercise the whole interpreter
+	// ------------------------------------------------------------------
+
+	private static void scripts() {
+		show("fib", "def fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\nprint(fib(20))\n");
+		show("closures", "def counter():\n    n = 0\n    def inc():\n        nonlocal n\n        n += 1\n        return n\n"
+				+ "    return inc\nc = counter()\nc(); c()\nprint(c(), [lambda x, i=i: x * i for i in range(3)][2](5))\n");
+		show("strings", "s = 'h\u00e9llo w\u00f6rld \ud83d\ude00'\nprint(len(s), f'{s.upper()!a}', f'{s[::-1]!a}', s.split() == ['h\u00e9llo', 'w\u00f6rld', '\ud83d\ude00'],"
+				+ " f'{s!a}', 'a,b,,c'.split(','), '-'.join(['x', 'y']), 'abc'.center(9, '*'))\n");
+		show("containers", "d = {'a': 1, 'b': [1, 2, (3, 4)]}\nd['c'] = d['b'][2][1]\nprint(d, sorted(d), list(d.items()))\n"
+				+ "print([x * x for x in range(10) if x % 2], {k: v for k, v in zip('abc', range(3))})\n"
+				+ "print(sorted([3, 1, 2], reverse=True), min(4, 2, 8), max([1, 5, 3]), sum(range(100)))\n");
+		show("integers", "print(7 // 2, -7 // 2, 7 % -3, 2 ** 10, 1 << 20, ~5, -2147483648, 7 / 2, divmod(-7, 2))\n"
+				+ "print(int('ff', 16), hex(255), oct(8), bin(5), round(2.5), round(3.5), round(2.675, 2))\n");
+		show("exceptions", "def f(x):\n    try:\n        return 10 // x\n    except ZeroDivisionError as e:\n"
+				+ "        return 'zero: ' + str(e)\n    else:\n        pass\nprint(f(2), f(0))\n"
+				+ "try:\n    [][1]\nexcept (KeyError, IndexError) as e:\n    print(type(e) is IndexError, e.args)\n"
+				+ "try:\n    raise ValueError('bad')\nexcept Exception as e:\n    print(repr(e))\n");
+		show("overflow", "try:\n    print(2147483647 + 1)\nexcept OverflowError:\n    print('overflow')\n");
+		show("uncaught", "x = 1\nprint(x)\nraise KeyError('k')\n");
+	}
+
+	private static void limits() {
+		System.out.println("-- limits");
+		System.out.print(run("def f():\n    f()\ntry:\n    f()\nexcept RecursionError:\n    print('recursion caught')\n",
+				200000000L, 200));
+		System.out.print(run("try:\n    while True:\n        pass\nexcept:\n    print('must not be reached')\n", 100000L, 1000));
+		System.out.print(run("def (:\n", 1000L, 1000));
+		System.out.print(run("a = []\nfor i in range(100000):\n    a = [a]\ntry:\n    repr(a)\nexcept RecursionError:\n"
+				+ "    print('deep repr caught')\n", 200000000L, 1000));
+	}
+
+	// ------------------------------------------------------------------
+	// 3. Timings (lines starting with '#', ignored by the comparison)
+	// ------------------------------------------------------------------
 
 	private static void bench() {
-		final int N = 2000000;
-		System.out.println("# --- java level (no interpreter): what the interpreter loop does, one thing at a time");
-		time("java: loop of additions", N, new Runnable() {
-			public void run() {
-				long x = 0;
-				for (int i = 0; i < N; i++)
-					x += i ^ (x >> 3);
-				sink += x;
-			}
-		});
-		time("java: new Object[4]", N, new Runnable() {
-			public void run() {
-				long x = 0;
-				for (int i = 0; i < N; i++) {
-					Object[] o = new Object[4];
-					o[0] = o;
-					x += o.length;
-				}
-				sink += x;
-			}
-		});
-		time("java: LuaValue.valueOf(int) beyond the cache", N, new Runnable() {
-			public void run() {
-				long x = 0;
-				for (int i = 0; i < N; i++)
-					x += LuaValue.valueOf(i + 1000).toint();
-				sink += x;
-			}
-		});
-		time("java: store a reference in a LuaValue[]", N, new Runnable() {
-			public void run() {
-				LuaValue[] st = new LuaValue[16];
-				LuaValue v = LuaValue.valueOf(5);
-				for (int i = 0; i < N; i++)
-					st[i & 15] = v;
-				sink += st[3].toint();
-			}
-		});
-		time("java: instanceof LuaInteger", N, new Runnable() {
-			public void run() {
-				LuaValue[] st = { LuaValue.valueOf(5), LuaValue.valueOf(1.5), LuaValue.valueOf("x"), org.luaj.vm2.LuaConstant.TRUE };
-				long x = 0;
-				for (int i = 0; i < N; i++)
-					if (st[i & 3] instanceof org.luaj.vm2.LuaInteger)
-						x++;
-				sink += x;
-			}
-		});
-		time("java: a.add(b) on small integers (no allocation)", N, new Runnable() {
-			public void run() {
-				LuaValue a = LuaValue.valueOf(1), b = LuaValue.valueOf(1);
-				long x = 0;
-				for (int i = 0; i < N; i++)
-					x += a.add(b).toint();
-				sink += x;
-			}
-		});
-		time("java: a.add(b) on large integers (allocation)", N, new Runnable() {
-			public void run() {
-				LuaValue a = LuaValue.valueOf(100000), b = LuaValue.valueOf(1);
-				long x = 0;
-				for (int i = 0; i < N; i++)
-					x += a.add(b).toint();
-				sink += x;
-			}
-		});
-		time("java: call of a java function (math.abs)", N, new Runnable() {
-			public void run() {
-				LuaValue abs = LuaEngine.newGlobals().get("math").get("abs");
-				LuaValue v = LuaValue.valueOf(-3);
-				long x = 0;
-				for (int i = 0; i < N; i++)
-					x += abs.call(v).toint();
-				sink += x;
-			}
-		});
-		time("java: a static method with try/finally", N, new Runnable() {
-			public void run() {
-				Depth d = new Depth();
-				long x = 0;
-				for (int i = 0; i < N; i++)
-					x += guarded(d, i);
-				sink += x;
-			}
-		});
-		time("java: LuaValue.valueOf(int) called inside one try/catch", N, new Runnable() {
-			public void run() {
-				long x = 0;
-				try {
-					for (int i = 0; i < N; i++)
-						x += LuaValue.valueOf(i + 1000).toint();
-				} catch (RuntimeException e) {
-					x = -1;
-				}
-				sink += x;
-			}
-		});
-		time("java: LuaValue.valueOf(int) called inside one try/finally", N, new Runnable() {
-			public void run() {
-				long x = 0;
-				try {
-					for (int i = 0; i < N; i++)
-						x += LuaValue.valueOf(i + 1000).toint();
-				} finally {
-					sink++;
-				}
-				sink += x;
-			}
-		});
-		time("java: a loop inside one try/catch, with a switch", N, new Runnable() {
-			public void run() {
-				int[] code = { 1, 2, 3, 0, 1, 2, 3, 0 };
-				long x = 0;
-				int pc = 0;
-				try {
-					for (int i = 0; i < N; i++, pc = (pc + 1) & 7) {
-						switch (code[pc]) {
-						case 0: x += 1; continue;
-						case 1: x += 2; continue;
-						case 2: x ^= 3; continue;
-						case 3: x -= 1; continue;
-						default: throw new RuntimeException();
-						}
-					}
-				} catch (RuntimeException e) {
-					x = -1;
-				}
-				sink += x;
-			}
-		});
-		time("java: 20000 throw/catch of LuaError", 20000, new Runnable() {
-			public void run() {
-				long x = 0;
-				for (int i = 0; i < 20000; i++) {
-					try {
-						throw new org.luaj.vm2.LuaError("x");
-					} catch (org.luaj.vm2.LuaError e) {
-						x++;
-					}
-				}
-				sink += x;
-			}
-		});
-
-		System.out.println("# --- lua level (the same number of iterations on the three editions)");
-		Globals g = LuaEngine.newGlobals();
-		timeLua(g, "empty loop 300k", 300000, "for i = 1, 300000 do end return 'x'");
-		timeLua(g, "int add 300k", 300000, "local x = 0 for i = 1, 300000 do x = x + i end return x");
-		timeLua(g, "float add 300k", 300000, "local x = 0.5 for i = 1, 300000 do x = x + 0.25 end return x");
-		timeLua(g, "move 300k", 300000, "local x, y = 1, 2 for i = 1, 300000 do x = y y = x end return x");
-		timeLua(g, "300k calls of a local function f(a)", 300000, "local function f(a) return a end local x = 0 for i = 1, 300000 do x = x + f(i) end return x");
-		timeLua(g, "300k calls of a function with no argument", 300000, "local function f() end for i = 1, 300000 do f() end return 'x'");
-		timeLua(g, "300k calls of math.abs (java function)", 300000, "local abs = math.abs local x = 0 for i = 1, 300000 do x = x + abs(i) end return x");
-		timeLua(g, "table set/get 10k", 10000, "local t = {} for i = 1, 10000 do t[i] = i end local x = 0 for i = 1, 10000 do x = x + t[i] end return x");
-		timeLua(g, "table set/get 100k", 100000, "local t = {} for i = 1, 100000 do t[i] = i end local x = 0 for i = 1, 100000 do x = x + t[i] end return x");
-		timeLua(g, "table with string keys 100k", 100000, "local t = {a = 1, b = 2} local x = 0 for i = 1, 100000 do t.a = t.a + 1 x = x + t.b end return x");
-		timeLua(g, "100k string.sub", 100000, "local s = 'hello world' local n = 0 for i = 1, 100000 do n = n + #s:sub(2, 5) end return n");
-		timeLua(g, "100k concat", 100000, "local n = 0 for i = 1, 100000 do n = n + #('a' .. i) end return n");
-		timeLua(g, "100k closures created", 100000, "local x = 0 for i = 1, 100000 do local f = function() return i end x = x + 1 end return x");
-		timeLua(g, "100k pcall", 100000, "local n = 0 for i = 1, 100000 do if pcall(function() end) then n = n + 1 end end return n");
-		timeLua(g, "fib(20)", 0, "local function fib(n) if n < 2 then return n end return fib(n-1) + fib(n-2) end return fib(20)");
-		timeLua(g, "fib(24)", 0, "local function fib(n) if n < 2 then return n end return fib(n-1) + fib(n-2) end return fib(24)");
-		timeLua(g, "20000 x string.format", 20000, "local n = 0 for i = 1, 20000 do n = n + #string.format('%.3f %g', i / 7, i * 1.1) end return n");
-		timeLua(g, "table set/get 1M (the one that crashed)", 1000000, "local t = {} for i = 1, 1000000 do t[i] = i end local x = 0 for i = 1, 1000000 do x = x + t[i] end return x");
-		timeLua(g, "fib(27)", 0, "local function fib(n) if n < 2 then return n end return fib(n-1) + fib(n-2) end return fib(27)");
-		System.out.println("# sink " + sink);
+		String fib = "def fib(n):\n    return n if n < 2 else fib(n - 1) + fib(n - 2)\nprint(fib(25))\n";
+		long t0 = System.currentTimeMillis();
+		String r = run(fib, 2000000000L, 1000);
+		long t1 = System.currentTimeMillis();
+		System.out.println("# fib(25) = " + r.trim() + " in " + (t1 - t0) + " ms");
+		String loop = "t = 0\nfor i in range(2000000):\n    t += i % 7\nprint(t)\n";
+		t0 = System.currentTimeMillis();
+		r = run(loop, 2000000000L, 1000);
+		t1 = System.currentTimeMillis();
+		System.out.println("# loop = " + r.trim() + " in " + (t1 - t0) + " ms");
+		String fmt = "s = 0\nfor i in range(20000):\n    s += len('%.3f %e' % (i / 7, i * 1.1))\nprint(s)\n";
+		t0 = System.currentTimeMillis();
+		r = run(fmt, 2000000000L, 1000);
+		t1 = System.currentTimeMillis();
+		System.out.println("# 20000 float formats = " + r.trim() + " in " + (t1 - t0) + " ms");
 	}
 }

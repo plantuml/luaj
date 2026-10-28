@@ -6,10 +6,10 @@ cannot compile) and what remains to do.
 
 ## Layout
 
-- `src/main/java`: the library (`org.luaj.vm2.*`).
+- `src/main/java`: the library (`org.luaj.vm2.python`).
 - `poc/`: separate Gradle build that compiles the library with TeaVM (JS and
   C) and runs a test program on the three editions; see its README.
-- `src/test/java`, `src/test/resources`: JUnit 5 tests and their Lua scripts.
+- `src/test/java`, `src/test/resources`: JUnit 5 tests and their Python scripts.
   The scripts are loaded through the class loader.
 
 ## Building and testing
@@ -27,9 +27,8 @@ The only jar kept in the repository is the JUnit console launcher in `lib/`.
 ## Test baseline
 
 The Python work is in `org.luaj.vm2.python` (see `PYTHON.md`). Its tests are
-`PyParserTest` and `PyScriptsTest`; both must pass entirely. The old Lua
-tests no longer have their `.lua` resources and fail; they will be removed
-with the Lua code.
+`PyParserTest` and `PyScriptsTest`; both must pass entirely (no known
+failure).
 
 ## Using clide
 
@@ -45,6 +44,5 @@ python3 /path/to/clide/start_clide.py /path/to/luaj
 printf 'rebuild\nerrors\n' | python3 /path/to/clide/clide.py /path/to/luaj
 ```
 
-Expect `0 error(s)` from `rebuild`, and the 11 failures above from
-`run_tests failures`. JUnit comes bundled with `clide.jar`; no jar is needed in
+Expect `0 error(s)` from `rebuild` and no failure from `run_tests failures`. JUnit comes bundled with `clide.jar`; no jar is needed in
 `.clide/`.
