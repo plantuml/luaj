@@ -365,6 +365,65 @@ final class Methods {
 			need(a, 0, 0, "lower");
 			return ((String) a[0]).toLowerCase(Locale.ROOT);
 		});
+		def(STR, "title", (in, a) -> {
+			need(a, 0, 0, "title");
+			String s = (String) a[0];
+			StringBuilder sb = new StringBuilder();
+			boolean prev = false;
+			for (int i = 0; i < s.length();) {
+				int cp = s.codePointAt(i);
+				i += Character.charCount(cp);
+				boolean letter = Character.isLetter(cp);
+				sb.appendCodePoint(letter ? (prev ? Character.toLowerCase(cp) : Character.toTitleCase(cp)) : cp);
+				prev = letter;
+			}
+			return sb.toString();
+		});
+		def(STR, "capitalize", (in, a) -> {
+			need(a, 0, 0, "capitalize");
+			String s = (String) a[0];
+			if (s.isEmpty())
+				return s;
+			int n = Character.charCount(s.codePointAt(0));
+			return s.substring(0, n).toUpperCase(Locale.ROOT).substring(0, 1).concat(s.substring(0, n).toUpperCase(Locale.ROOT).substring(1))
+					+ s.substring(n).toLowerCase(Locale.ROOT);
+		});
+		def(STR, "swapcase", (in, a) -> {
+			need(a, 0, 0, "swapcase");
+			String s = (String) a[0];
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < s.length();) {
+				int cp = s.codePointAt(i);
+				i += Character.charCount(cp);
+				sb.appendCodePoint(Character.isUpperCase(cp) ? Character.toLowerCase(cp)
+						: Character.isLowerCase(cp) ? Character.toUpperCase(cp) : cp);
+			}
+			return sb.toString();
+		});
+		for (final boolean right : new boolean[] { false, true }) {
+			final String nm = right ? "rpartition" : "partition";
+			def(STR, nm, (in, a) -> {
+				need(a, 1, 1, nm);
+				String s = (String) a[0];
+				String sep = str(a, 1, nm);
+				if (sep.isEmpty())
+					throw PyOps.err(Types.VALUE_ERROR, "empty separator");
+				int i = right ? s.lastIndexOf(sep) : s.indexOf(sep);
+				if (i < 0)
+					return new PyTuple(right ? new Object[] { "", "", s } : new Object[] { s, "", "" });
+				return new PyTuple(new Object[] { s.substring(0, i), sep, s.substring(i + sep.length()) });
+			});
+		}
+		def(STR, "removeprefix", (in, a) -> {
+			need(a, 1, 1, "removeprefix");
+			String s = (String) a[0], p = str(a, 1, "removeprefix");
+			return s.startsWith(p) ? s.substring(p.length()) : s;
+		});
+		def(STR, "removesuffix", (in, a) -> {
+			need(a, 1, 1, "removesuffix");
+			String s = (String) a[0], p = str(a, 1, "removesuffix");
+			return !p.isEmpty() && s.endsWith(p) ? s.substring(0, s.length() - p.length()) : s;
+		});
 		def(STR, "strip", strip(true, true, "strip"));
 		def(STR, "lstrip", strip(true, false, "lstrip"));
 		def(STR, "rstrip", strip(false, true, "rstrip"));

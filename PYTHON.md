@@ -67,7 +67,7 @@ with `list()` or a `for` loop in the tests).
 
 Methods: `str` (`upper lower strip lstrip rstrip split join replace find
 rfind index count startswith endswith isdigit isalpha isalnum isspace
-isupper islower ljust rjust center zfill splitlines format`), `list` (`append extend insert
+isupper islower ljust rjust center zfill splitlines format title capitalize swapcase partition rpartition rsplit rindex removeprefix removesuffix`), `list` (`append extend insert
 pop remove index count sort reverse clear copy`), `dict` (`get keys values
 items pop update setdefault clear copy`), `tuple` (`index count`). The `%`
 operator on strings and f-strings are supported with the usual conversions
